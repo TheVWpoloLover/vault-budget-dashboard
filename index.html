@@ -1,0 +1,1606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VAULT · Personal Finance Dashboard</title>
+<style>
+:root{
+  --bg:#060708;--s1:#0c0f16;--s2:#111520;--s3:#171d29;--s4:#1c2334;
+  --brd:#1e2a3d;--brd2:#253045;
+  --gold:#e8b84b;--gold2:#f5d070;--goldbg:rgba(232,184,75,.1);
+  --blue:#4f8aff;--mint:#00c896;--pur:#8b5cf6;--red:#f04444;--amber:#f59e0b;--cyan:#06b6d4;
+  --txt:#eef0f5;--t2:#8896b0;--t3:#3d5068;--t4:#232f44;
+  --sw:252px;--rad:16px;
+  --shadow:0 8px 32px rgba(0,0,0,.5);
+  --shadow-lg:0 20px 60px rgba(0,0,0,.6);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:0;opacity:.022;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;width:700px;height:700px;background:radial-gradient(circle,rgba(79,138,255,.05) 0%,transparent 70%);top:-200px;left:calc(var(--sw) - 80px);pointer-events:none;z-index:0}
+
+/* LAYOUT */
+.app{display:flex;min-height:100vh;position:relative;z-index:1}
+
+/* SIDEBAR */
+.sidebar{width:var(--sw);flex-shrink:0;position:fixed;top:0;left:0;bottom:0;background:linear-gradient(180deg,#090c13 0%,#060708 100%);border-right:1px solid var(--brd);display:flex;flex-direction:column;padding:24px 14px 18px;z-index:100}
+.brand{padding:0 8px 22px;border-bottom:1px solid var(--brd);margin-bottom:18px}
+.vault-logo{display:flex;align-items:center;gap:10px}
+.vault-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:900;color:#000;flex-shrink:0;box-shadow:0 4px 16px rgba(232,184,75,.3)}
+.vault-text{font-size:1.3rem;font-weight:800;letter-spacing:-.04em;background:linear-gradient(135deg,#fff 30%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.brand-tagline{font-family:'JetBrains Mono',monospace;font-size:.48rem;letter-spacing:.2em;text-transform:uppercase;color:var(--t3);margin-top:6px;padding-left:46px}
+.nav{display:flex;flex-direction:column;gap:2px;flex:1;margin-top:2px}
+.nbtn{display:flex;align-items:center;gap:11px;padding:10px 12px;border:none;background:none;color:var(--t2);font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;font-weight:500;border-radius:12px;cursor:pointer;transition:all .2s ease;text-align:left;width:100%;position:relative}
+.nbtn:hover{background:rgba(255,255,255,.04);color:var(--txt);transform:translateX(2px)}
+.nbtn.on{background:var(--goldbg);color:var(--gold);font-weight:600}
+.nbtn.on::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:60%;background:var(--gold);border-radius:0 3px 3px 0}
+.nicon{width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;font-size:.82rem;flex-shrink:0;transition:background .2s}
+.nbtn.on .nicon{background:var(--goldbg)}
+.nbadge{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:.54rem;padding:2px 6px;border-radius:4px;background:rgba(240,68,68,.15);color:var(--red)}
+.sidebar-divider{height:1px;background:var(--brd);margin:8px 0}
+.nav-section-label{font-family:'JetBrains Mono',monospace;font-size:.48rem;letter-spacing:.18em;text-transform:uppercase;color:var(--t3);padding:4px 12px;margin-top:2px}
+.user-card{background:var(--s1);border:1px solid var(--brd);border-radius:12px;padding:11px;display:flex;align-items:center;gap:9px;margin-top:auto}
+.av{width:34px;height:34px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,var(--gold),var(--pur));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.88rem;color:#fff;box-shadow:0 2px 12px rgba(232,184,75,.25)}
+.un{font-weight:700;font-size:.8rem}
+.us{font-family:'JetBrains Mono',monospace;font-size:.54rem;color:var(--mint);margin-top:2px}
+
+/* MAIN */
+.main{flex:1;margin-left:var(--sw);min-height:100vh;position:relative;z-index:1}
+.page{display:none;animation:fadeIn .28s ease}
+.page.on{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.pw{max-width:900px;margin:0 auto;padding:34px 26px 110px}
+
+/* PAGE HEADER */
+.phead{margin-bottom:26px}
+.ptitle{font-size:1.55rem;font-weight:800;letter-spacing:-.04em;line-height:1}
+.psub{font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:.15em;text-transform:uppercase;color:var(--t3);margin-top:4px}
+.ptitle-date{font-family:'JetBrains Mono',monospace;font-size:.63rem;color:var(--t2);margin-top:7px}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,#0e1520 0%,#090e18 100%);border:1px solid var(--brd2);border-radius:20px;padding:26px;margin-bottom:14px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-60px;right:-60px;width:250px;height:250px;background:radial-gradient(circle,rgba(232,184,75,.07) 0%,transparent 70%);pointer-events:none}
+.hero-label{font-family:'JetBrains Mono',monospace;font-size:.52rem;letter-spacing:.18em;text-transform:uppercase;color:var(--t3);margin-bottom:7px}
+.hero-amount{font-family:'JetBrains Mono',monospace;font-size:2.5rem;font-weight:600;letter-spacing:-.04em;line-height:1;background:linear-gradient(135deg,var(--txt) 0%,var(--t2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-amount.pos{background:linear-gradient(135deg,#fff 0%,var(--mint) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-amount.neg{background:linear-gradient(135deg,#fff 0%,var(--red) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:.74rem;color:var(--t2);margin-top:7px}
+.hero-row{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.hero-meta{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px}
+.hm{display:flex;flex-direction:column;gap:3px}
+.hm-l{font-family:'JetBrains Mono',monospace;font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:var(--t3)}
+.hm-v{font-family:'JetBrains Mono',monospace;font-size:.88rem;font-weight:500}
+
+/* STAT GRID */
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px;margin-bottom:14px}
+.sc{background:var(--s1);border:1px solid var(--brd);border-radius:var(--rad);padding:15px;position:relative;overflow:hidden;cursor:default;transition:border-color .2s,transform .2s}
+.sc:hover{border-color:var(--brd2);transform:translateY(-1px)}
+.sc-accent{position:absolute;top:0;left:0;right:0;height:2px;border-radius:var(--rad) var(--rad) 0 0}
+.sc-lbl{font-family:'JetBrains Mono',monospace;font-size:.5rem;letter-spacing:.14em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
+.sc-val{font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:500;letter-spacing:-.02em;line-height:1}
+.sc-val.g{color:var(--mint)}.sc-val.r{color:var(--red)}.sc-val.w{color:var(--amber)}.sc-val.b{color:var(--blue)}.sc-val.p{color:var(--pur)}.sc-val.go{color:var(--gold)}
+.sc-sub{font-family:'JetBrains Mono',monospace;font-size:.53rem;color:var(--t3);margin-top:4px;line-height:1.4}
+
+/* CARDS */
+.card{background:var(--s1);border:1px solid var(--brd);border-radius:var(--rad);margin-bottom:12px;overflow:hidden}
+.chead{display:flex;align-items:center;gap:10px;padding:13px 17px;border-bottom:1px solid var(--brd);flex-wrap:wrap;gap:8px}
+.cicon{width:27px;height:27px;border-radius:8px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:.78rem;flex-shrink:0}
+.ctitle{font-size:.8rem;font-weight:700;flex:1;letter-spacing:-.01em}
+.cbadge{font-family:'JetBrains Mono',monospace;font-size:.54rem;padding:2px 8px;border-radius:6px;background:var(--s2);color:var(--t2)}
+.cbody{padding:15px 17px}
+
+/* PILLS */
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:100px;font-family:'JetBrains Mono',monospace;font-size:.56rem;font-weight:500}
+.pill.safe{background:rgba(0,200,150,.1);color:var(--mint);border:1px solid rgba(0,200,150,.2)}
+.pill.warn{background:rgba(245,158,11,.1);color:var(--amber);border:1px solid rgba(245,158,11,.2)}
+.pill.bad{background:rgba(240,68,68,.1);color:var(--red);border:1px solid rgba(240,68,68,.2)}
+.dot{width:5px;height:5px;border-radius:50%;background:currentColor;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* DUE CHIPS */
+.dc{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.55rem;padding:2px 7px;border-radius:5px;font-weight:500}
+.dc.ok{background:rgba(0,200,150,.1);color:var(--mint)}
+.dc.soon{background:rgba(245,158,11,.1);color:var(--amber)}
+.dc.urg{background:rgba(240,68,68,.1);color:var(--red)}
+.dc.none{background:var(--s2);color:var(--t3)}
+
+/* INPUTS */
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-family:'JetBrains Mono',monospace;font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:var(--t3)}
+input[type=number],input[type=text]{background:var(--s2);border:1px solid var(--brd);border-radius:9px;padding:8px 11px;color:var(--txt);font-family:'JetBrains Mono',monospace;font-size:.8rem;width:100%;outline:none;transition:border-color .2s,box-shadow .2s}
+input:focus{border-color:rgba(232,184,75,.5);box-shadow:0 0 0 3px rgba(232,184,75,.07)}
+input::placeholder{color:var(--t3)}
+
+/* BUTTONS */
+.btn-primary{width:100%;padding:14px;background:linear-gradient(135deg,var(--gold),#d4a030);color:#000;border:none;border-radius:12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.86rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;margin:12px 0;transition:all .18s;box-shadow:0 8px 24px rgba(232,184,75,.18)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(232,184,75,.32)}
+.btn-primary:active{transform:translateY(0)}
+
+/* RING */
+.ring-svg{transform:rotate(-90deg)}
+.ring-track{fill:none;stroke:var(--s3);stroke-width:8;stroke-linecap:round}
+.ring-fill{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1s cubic-bezier(.4,0,.2,1),stroke .4s}
+.ring-pct-txt{font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:600;text-anchor:middle;dominant-baseline:central}
+.ring-lbl-txt{font-family:'JetBrains Mono',monospace;font-size:.42rem;letter-spacing:.1em;text-transform:uppercase;text-anchor:middle;dominant-baseline:central;fill:var(--t3)}
+
+/* CC CARD */
+.ccc{background:var(--s1);border:1px solid var(--brd);border-radius:18px;margin-bottom:14px;overflow:hidden;transition:border-color .25s,box-shadow .25s,transform .25s}
+.ccc:hover{border-color:var(--brd2);box-shadow:0 8px 40px rgba(0,0,0,.4);transform:translateY(-1px)}
+.ccc-inner{padding:18px}
+.ccc-row1{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.ccc-name{font-size:.9rem;font-weight:700;letter-spacing:-.01em}
+.ccc-bank{font-size:.68rem;color:var(--t2);margin-top:2px}
+.ccc-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.chip{font-family:'JetBrains Mono',monospace;font-size:.5rem;padding:2px 7px;border-radius:5px;background:rgba(255,255,255,.05);color:var(--t2);font-weight:500}
+.chip.bl{background:rgba(79,138,255,.12);color:var(--blue)}.chip.gn{background:rgba(0,200,150,.12);color:var(--mint)}.chip.am{background:rgba(245,158,11,.12);color:var(--amber)}.chip.rd{background:rgba(240,68,68,.12);color:var(--red)}.chip.go{background:rgba(232,184,75,.12);color:var(--gold)}
+.ccc-ring-bill{display:flex;align-items:center;gap:14px}
+.ccc-bill-amt{font-family:'JetBrains Mono',monospace;font-size:1.5rem;font-weight:500;letter-spacing:-.03em}
+.ccc-limit-info{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--t3);margin-top:3px}
+.ccc-avail{font-family:'JetBrains Mono',monospace;font-size:.6rem;margin-top:2px}
+.util-bar-wrap{margin-top:11px}
+.util-bar-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.util-bar-lbl{font-family:'JetBrains Mono',monospace;font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
+.util-bar-pct{font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:600}
+.util-track{height:7px;background:var(--s3);border-radius:20px;overflow:hidden;position:relative}
+.util-track::before{content:'';position:absolute;left:30%;top:0;bottom:0;width:1px;background:rgba(255,255,255,.06)}
+.util-track::after{content:'';position:absolute;left:75%;top:0;bottom:0;width:1px;background:rgba(255,255,255,.06)}
+.util-fill{height:100%;border-radius:20px;transition:width 1s cubic-bezier(.4,0,.2,1),background .4s}
+.util-ticks{display:flex;justify-content:space-between;margin-top:3px}
+.utick{font-family:'JetBrains Mono',monospace;font-size:.44rem;color:var(--t3)}
+.ccc-dates{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid var(--brd)}
+.ccd{padding:11px 15px;border-right:1px solid var(--brd)}
+.ccd:last-child{border-right:none}
+.ccd-lbl{font-family:'JetBrains Mono',monospace;font-size:.47rem;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:4px}
+.ccd-val{font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:500;color:var(--txt)}
+.ccd-sub{font-size:.64rem;color:var(--t2);margin-top:3px}
+.ccc-edit{background:var(--s2);border-top:1px solid var(--brd);display:none;grid-template-columns:1fr 1fr;gap:11px;padding:13px 15px}
+.ccc-edit.open{display:grid}
+.ccc-edit-toggle{display:flex;align-items:center;justify-content:center;gap:7px;padding:9px 15px;border-top:1px solid var(--brd);background:none;border-left:none;border-right:none;border-bottom:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:.7rem;font-weight:600;color:var(--t2);width:100%;transition:all .18s}
+.ccc-edit-toggle:hover{background:rgba(255,255,255,.03);color:var(--gold)}
+.ccc-edit-toggle.active{color:var(--gold)}
+.ccc-save-btn{padding:9px;background:linear-gradient(135deg,var(--gold),#d4a030);color:#000;border:none;border-radius:8px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.73rem;font-weight:800;cursor:pointer;transition:all .15s;letter-spacing:.03em;text-transform:uppercase;grid-column:1/-1}
+.ccc-save-btn:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(232,184,75,.28)}
+
+/* AXIS POOL */
+.pool{background:linear-gradient(135deg,rgba(79,138,255,.06) 0%,rgba(139,92,246,.04) 100%);border:1px solid rgba(79,138,255,.18);border-radius:16px;padding:17px;margin-bottom:14px}
+.pool-title{font-family:'JetBrains Mono',monospace;font-size:.54rem;letter-spacing:.15em;text-transform:uppercase;color:var(--blue);margin-bottom:11px}
+.pool-track{height:10px;background:var(--s3);border-radius:20px;overflow:hidden;margin-bottom:8px}
+.pool-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--blue),var(--pur));transition:width 1s cubic-bezier(.4,0,.2,1)}
+.pool-stats{display:flex;gap:14px;flex-wrap:wrap}
+.pstat{font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--t2)}
+.pstat strong{color:var(--txt)}
+
+/* BANK DIVIDER */
+.bdiv{display:flex;align-items:center;gap:10px;padding:5px 0 11px;font-family:'JetBrains Mono',monospace;font-size:.52rem;letter-spacing:.15em;text-transform:uppercase;color:var(--t3)}
+.bdiv::after{content:'';flex:1;height:1px;background:var(--brd)}
+
+/* PORTFOLIO */
+.holding{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(31,43,62,.7)}
+.holding:last-child{border-bottom:none}
+.h-name{font-size:.8rem;font-weight:600}
+.h-inv{font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--t3);margin-top:2px}
+.h-cur input{width:110px;padding:5px 8px;font-size:.7rem;border-radius:7px;background:var(--s2);border:1px solid var(--brd);color:var(--txt);font-family:'JetBrains Mono',monospace;outline:none;transition:border-color .2s}
+.h-cur input:focus{border-color:rgba(232,184,75,.4)}
+.h-pnl{font-family:'JetBrains Mono',monospace;font-size:.73rem;font-weight:500;text-align:right}
+.h-pnl.pos{color:var(--mint)}.h-pnl.neg{color:var(--red)}
+.pnl-bar{height:3px;border-radius:3px;margin-top:3px}
+.pnl-bar.pos{background:var(--mint);opacity:.4}.pnl-bar.neg{background:var(--red);opacity:.4}
+
+/* LOAN */
+.loan-card{background:linear-gradient(135deg,rgba(79,138,255,.07) 0%,rgba(139,92,246,.05) 100%);border:1px solid rgba(79,138,255,.22);border-radius:16px;padding:20px;margin-bottom:12px;position:relative;overflow:hidden}
+.loan-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--blue),var(--pur))}
+.loan-header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.loan-name{font-size:.9rem;font-weight:700;letter-spacing:-.01em}
+.loan-bank{font-size:.66rem;color:var(--t2);margin-top:2px}
+.loan-total{font-family:'JetBrains Mono',monospace;font-size:1.35rem;font-weight:500;color:var(--blue)}
+.loan-remaining{font-family:'JetBrains Mono',monospace;font-size:.66rem;color:var(--t3);margin-top:3px}
+.loan-progress-wrap{margin-bottom:14px}
+.loan-progress-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.loan-progress-lbl{font-family:'JetBrains Mono',monospace;font-size:.51rem;letter-spacing:.12em;text-transform:uppercase;color:var(--t3)}
+.loan-progress-pct{font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:600;color:var(--mint)}
+.loan-track{height:10px;background:var(--s3);border-radius:20px;overflow:hidden}
+.loan-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--blue),var(--mint));transition:width 1s cubic-bezier(.4,0,.2,1)}
+.loan-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:9px;margin-bottom:14px}
+.loan-stat{background:rgba(255,255,255,.03);border:1px solid var(--brd);border-radius:10px;padding:10px 12px}
+.loan-stat-lbl{font-family:'JetBrains Mono',monospace;font-size:.48rem;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:4px}
+.loan-stat-val{font-family:'JetBrains Mono',monospace;font-size:.86rem;font-weight:500}
+.emi-timeline{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.emi-dot{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.5rem;font-weight:600;transition:transform .15s;cursor:default}
+.emi-dot:hover{transform:scale(1.15)}
+.emi-dot.paid{background:rgba(0,200,150,.2);color:var(--mint);border:1px solid rgba(0,200,150,.3)}
+.emi-dot.current{background:rgba(232,184,75,.2);color:var(--gold);border:1px solid rgba(232,184,75,.4);box-shadow:0 0 8px rgba(232,184,75,.2)}
+.emi-dot.upcoming{background:rgba(255,255,255,.04);color:var(--t3);border:1px solid var(--brd)}
+.emi-dot-lbl{font-family:'JetBrains Mono',monospace;font-size:.46rem;color:var(--t3);margin-top:4px;text-align:center}
+
+/* DONUT */
+.donut-wrap{display:flex;align-items:center;gap:22px;flex-wrap:wrap;padding:4px 0 12px}
+.donut-legend{display:flex;flex-direction:column;gap:6px;flex:1;min-width:120px}
+.dl-row{display:flex;align-items:center;gap:7px}
+.dl-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.dl-name{color:var(--t2);flex:1;font-size:.7rem}
+.dl-amt{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--txt)}
+.dl-pct{font-family:'JetBrains Mono',monospace;font-size:.56rem;color:var(--t3);margin-left:4px}
+
+/* BUDGET */
+.bcat{padding:10px 0;border-bottom:1px solid rgba(31,43,62,.6)}
+.bcat:last-child{border-bottom:none}
+.bcat-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;gap:8px}
+.bcat-name{font-size:.78rem;font-weight:600}
+.bcat-right{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.bcat-right input{width:78px;padding:3px 7px;font-size:.65rem;border-radius:6px;background:var(--s3);border:1px solid var(--brd);color:var(--txt);font-family:'JetBrains Mono',monospace;outline:none;transition:border-color .2s}
+.bcat-right input:focus{border-color:rgba(232,184,75,.4)}
+.bbar-wrap{display:flex;align-items:center;gap:8px}
+.bbar-track{flex:1;height:5px;background:var(--s3);border-radius:10px;overflow:hidden}
+.bbar-fill{height:100%;border-radius:10px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+.bbar-pct{font-family:'JetBrains Mono',monospace;font-size:.58rem;width:32px;text-align:right;flex-shrink:0}
+.frow{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(31,43,62,.5)}
+.frow:last-child{border-bottom:none}
+.frow-n{font-size:.76rem;color:var(--t2)}.frow-a{font-family:'JetBrains Mono',monospace;font-size:.8rem}
+.frow.total .frow-n{color:var(--txt);font-weight:700}.frow.total .frow-a{font-size:.92rem;font-weight:700}
+.insight{padding:10px 13px;border-radius:10px;font-size:.74rem;line-height:1.6;margin-top:10px}
+.insight.ok{background:rgba(0,200,150,.06);border:1px solid rgba(0,200,150,.15);color:var(--t2)}.insight.ok strong{color:var(--mint)}
+.insight.warn{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);color:var(--t2)}.insight.warn strong{color:var(--amber)}
+.insight.bad{background:rgba(240,68,68,.06);border:1px solid rgba(240,68,68,.15);color:var(--t2)}.insight.bad strong{color:var(--red)}
+
+/* DUE LIST */
+.due-item{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid rgba(31,43,62,.5);gap:11px}
+.due-item:last-child{border-bottom:none}
+.due-color{width:3px;height:36px;border-radius:3px;flex-shrink:0}
+.due-info{flex:1}
+.due-name{font-size:.8rem;font-weight:600}
+.due-meta{font-family:'JetBrains Mono',monospace;font-size:.56rem;color:var(--t3);margin-top:2px}
+.due-right{display:flex;align-items:center;gap:11px;flex-shrink:0}
+.due-amt{font-family:'JetBrains Mono',monospace;font-size:.88rem;font-weight:500}
+
+/* TABLE */
+.dtbl{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:.72rem}
+.dtbl th{text-align:left;color:var(--t3);font-size:.49rem;letter-spacing:.12em;text-transform:uppercase;padding:5px 0;border-bottom:1px solid var(--brd)}
+.dtbl td{padding:8px 0;border-bottom:1px solid rgba(31,43,62,.5);vertical-align:middle}
+.dtbl td:last-child{text-align:right}
+.dtbl tr.tt td{color:var(--gold);border-top:1px solid var(--brd);border-bottom:none;padding-top:10px;font-weight:600}
+.results{display:none;animation:fadeIn .4s ease}.results.on{display:block}
+
+/* RECEIVABLES */
+.rrow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(31,43,62,.5);font-size:.78rem}
+.rrow:last-child{border-bottom:none}.rrow.total{font-weight:700}
+.ramt{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--mint)}
+
+/* INS */
+.ins-box{background:linear-gradient(135deg,rgba(79,138,255,.08),rgba(139,92,246,.05));border:1px solid rgba(79,138,255,.2);border-radius:12px;padding:15px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.ins-amt{font-family:'JetBrains Mono',monospace;font-size:1.5rem;font-weight:500;color:var(--blue)}
+.ins-badge{display:inline-block;margin-top:7px;font-family:'JetBrains Mono',monospace;font-size:.53rem;background:rgba(245,158,11,.1);color:var(--amber);border:1px solid rgba(245,158,11,.2);padding:2px 8px;border-radius:5px}
+
+/* CREDIT SCORE */
+.score-ring{display:flex;flex-direction:column;align-items:center;padding:4px 0}
+.score-text{text-align:center;margin-top:8px}
+.score-num{font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:600}
+.score-lbl{font-family:'JetBrains Mono',monospace;font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-top:2px}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* TOAST */
+.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(20px);z-index:300;background:var(--s3);border:1px solid var(--brd2);border-radius:10px;padding:10px 16px;font-family:'JetBrains Mono',monospace;font-size:.63rem;color:var(--mint);display:flex;align-items:center;gap:7px;box-shadow:var(--shadow-lg);opacity:0;transition:all .3s ease;pointer-events:none;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* SCROLL TOP */
+#scroll-top-btn{position:fixed;bottom:22px;right:22px;width:40px;height:40px;border-radius:50%;background:var(--gold);border:none;color:#000;font-size:1.1rem;cursor:pointer;box-shadow:0 4px 14px rgba(232,184,75,.35);opacity:0;pointer-events:none;transition:opacity .3s,transform .2s;z-index:150;display:flex;align-items:center;justify-content:center}
+#scroll-top-btn:hover{transform:scale(1.1)}
+#scroll-top-btn.visible{opacity:1;pointer-events:auto}
+
+/* MOBILE NAV */
+.mobnav{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(6,7,8,.96);backdrop-filter:blur(20px);border-top:1px solid var(--brd);z-index:100;padding:7px 0 max(env(safe-area-inset-bottom),7px)}
+.mobnav-inner{display:flex;justify-content:space-around}
+.mb{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 12px;background:none;border:none;color:var(--t3);font-family:'Plus Jakarta Sans',sans-serif;font-size:.56rem;font-weight:500;cursor:pointer;transition:color .2s}
+.mb.on{color:var(--gold)}
+.mb-icon{font-size:1rem}
+
+/* RESPONSIVE */
+@media(max-width:800px){
+  .app{flex-direction:column}.sidebar{display:none}.main{margin-left:0}.mobnav{display:block}
+  .pw{padding:16px 12px 88px}.g2,.g3{grid-template-columns:1fr}
+  .ccc-dates{grid-template-columns:1fr 1fr}.ccc-dates .ccd:last-child{grid-column:1/-1;border-right:none;border-top:1px solid var(--brd)}
+  .ccc-edit.open{grid-template-columns:1fr}.hero-meta{gap:12px}.sgrid{grid-template-columns:1fr 1fr}
+  .donut-wrap{flex-direction:column;align-items:flex-start}
+  #scroll-top-btn{right:12px;bottom:78px}
+  .toast{bottom:88px}
+}
+@media(max-width:480px){
+  .sgrid{grid-template-columns:1fr 1fr}.ccc-dates{grid-template-columns:1fr}
+  .ccd{border-right:none!important;border-bottom:1px solid var(--brd)}.ccd:last-child{border-bottom:none}
+  .hero-amount{font-size:2rem}.ccc-ring-bill{flex-direction:column;align-items:flex-start}
+}
+
+/* Portfolio editable */
+.port-hold-row{display:grid;grid-template-columns:1fr 90px 90px 80px 28px;gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(31,43,62,.6)}
+.port-hold-row:last-child{border-bottom:none}
+.port-hold-name{font-size:.78rem;font-weight:600}
+.port-hold-sub{font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--t3);margin-top:1px}
+.port-input{padding:4px 7px;font-size:.68rem;border-radius:7px;background:var(--s2);border:1px solid var(--brd);color:var(--txt);font-family:'JetBrains Mono',monospace;outline:none;width:100%;transition:border-color .2s}
+.port-input:focus{border-color:rgba(232,184,75,.4)}
+.port-pnl{font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:500;text-align:right}
+.port-pnl.pos{color:var(--mint)}.port-pnl.neg{color:var(--red)}
+.del-btn{width:24px;height:24px;border-radius:6px;background:rgba(240,68,68,.1);border:1px solid rgba(240,68,68,.2);color:var(--red);font-size:.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0}
+.del-btn:hover{background:rgba(240,68,68,.22)}
+.add-hold-btn{padding:7px 14px;background:rgba(79,138,255,.12);color:var(--blue);border:1px solid rgba(79,138,255,.22);border-radius:8px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.72rem;cursor:pointer;transition:all .15s;margin-top:10px}
+.add-hold-btn:hover{background:rgba(79,138,255,.22)}
+.save-port-btn{padding:7px 14px;background:linear-gradient(135deg,var(--gold),#d4a030);color:#000;border:none;border-radius:8px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:.7rem;cursor:pointer;transition:all .15s;margin-top:10px;margin-left:8px;letter-spacing:.02em;text-transform:uppercase}
+.save-port-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(232,184,75,.25)}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast">✓ Saved</div>
+<button id="scroll-top-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Scroll to top">↑</button>
+
+<div class="app">
+<aside class="sidebar">
+  <div class="brand">
+    <div class="vault-logo"><div class="vault-icon">V</div><div class="vault-text">VAULT</div></div>
+    <div class="brand-tagline">Personal Finance Dashboard</div>
+  </div>
+  <div class="nav-section-label">Navigation</div>
+  <nav class="nav">
+    <button class="nbtn on" onclick="go('dash')"><div class="nicon">◈</div>Dashboard</button>
+    <button class="nbtn" onclick="go('cards')"><div class="nicon">▣</div>Credit Cards<span class="nbadge" id="nav-due-count"></span></button>
+    <button class="nbtn" onclick="go('portfolio')"><div class="nicon">◎</div>Portfolio</button>
+    <button class="nbtn" onclick="go('budget')"><div class="nicon">⊞</div>Budget</button>
+    <button class="nbtn" onclick="go('tracker')"><div class="nicon">📈</div>Tracker</button>
+    <button class="nbtn" onclick="go('settings')"><div class="nicon">⚙️</div>Settings</button>
+  </nav>
+  <div class="sidebar-divider"></div>
+  <div class="user-card">
+    <div class="av">T</div>
+    <div><div class="un">Your profile</div><div class="us">Private · Stored in this browser</div></div>
+  </div>
+</aside>
+
+<main class="main">
+
+<!-- DASHBOARD -->
+<div class="page on" id="pg-dash">
+<div class="pw">
+  <div class="phead">
+    <div class="ptitle">Dashboard</div>
+    <div class="ptitle-date" id="dash-date"></div>
+  </div>
+  <div class="hero">
+    <div class="hero-label">Net Position After All Dues</div>
+    <div class="hero-row">
+      <div><div class="hero-amount" id="hero-amount">—</div><div class="hero-sub" id="hero-sub">Calculating…</div></div>
+      <div id="hero-pill"></div>
+    </div>
+    <div class="hero-meta" id="hero-meta"></div>
+  </div>
+  <div class="sgrid" id="dash-stats"></div>
+  <div class="card">
+    <div class="chead"><div class="cicon">🏦</div><div class="ctitle">Bank Balance & EMIs</div><span class="cbadge">Edit to recalculate</span></div>
+    <div class="cbody">
+      <div class="g3">
+        <div class="field"><label>Bank Balance (₹)</label><input type="number" id="balance" value="0" oninput="refresh()"></div>
+        <div class="field"><label>Loan EMI (₹)</label><input type="number" id="emi1" value="0" oninput="refresh()"></div>
+        <div class="field"><label>Other EMI / Commitment</label><input type="number" id="emi2" value="0" oninput="refresh()"></div>
+      </div>
+    </div>
+  </div>
+  <div id="loan-card"></div>
+  <div class="card">
+    <div class="chead"><div class="cicon">📅</div><div class="ctitle">Upcoming Payments</div><span class="cbadge" id="due-count-badge">—</span></div>
+    <div class="cbody" id="due-list"></div>
+  </div>
+  <div class="card">
+    <div class="chead"><div class="cicon">💳</div><div class="ctitle">Credit Health</div><span class="cbadge">7 active cards</span></div>
+    <div class="cbody" id="credit-health"></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+    <button class="btn-primary" style="margin:12px 0" onclick="runAnalysis()">⚡ Run Full Analysis</button>
+    <div id="last-analysis-ts" style="font-family:'JetBrains Mono',monospace;font-size:.56rem;color:var(--t3);white-space:nowrap"></div>
+  </div>
+  <div class="results" id="results">
+    <div class="card">
+      <div class="chead"><div class="cicon">📋</div><div class="ctitle">Complete Breakdown</div></div>
+      <div class="cbody"><table class="dtbl" id="btbl"></table></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- CARDS -->
+<div class="page" id="pg-cards">
+<div class="pw">
+  <div class="phead"><div class="ptitle">Credit Cards</div><div class="psub">Limits · Utilization · Billing Dates · Due Dates</div></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <button onclick="resetAllPaid()" style="padding:8px 14px;background:rgba(240,68,68,.1);color:var(--red);border:1px solid rgba(240,68,68,.2);border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.72rem;cursor:pointer;transition:all .15s" onmouseover="this.style.background='rgba(240,68,68,.2)'" onmouseout="this.style.background='rgba(240,68,68,.1)'">↩ Reset All Paid Status</button>
+  </div>
+  <div class="pool">
+    <div class="pool-title">🏦 Shared Credit Pool</div>
+    <div class="pool-track"><div class="pool-fill" id="pool-fill" style="width:0%"></div></div>
+    <div class="pool-stats">
+      <div class="pstat">Pool Limit: <strong>₹0</strong></div>
+      <div class="pstat">Used: <strong id="pool-used">₹0</strong></div>
+      <div class="pstat">Available: <strong id="pool-free">₹0</strong></div>
+      <div class="pstat">Usage: <strong id="pool-pct" style="color:var(--mint)">0%</strong></div>
+    </div>
+  </div>
+  <div id="cc-list"></div>
+</div>
+</div>
+
+<!-- PORTFOLIO -->
+<div class="page" id="pg-portfolio">
+<div class="pw">
+  <div class="phead"><div class="ptitle">Portfolio</div><div class="psub">Stocks · Mutual Funds · Insurance · Receivables</div></div>
+  <div class="sgrid" id="port-stats"></div>
+  <div class="g2" style="margin-bottom:12px">
+    <div class="card">
+      <div class="chead"><div class="cicon">📈</div><div class="ctitle">Stocks</div><span class="cbadge" id="stock-badge">—</span></div>
+      <div class="cbody">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.48rem;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);display:grid;grid-template-columns:1fr 90px 90px 80px 28px;gap:6px;padding-bottom:6px;border-bottom:1px solid var(--brd)">
+          <span>Stock</span><span>Invested</span><span>Current</span><span style="text-align:right">P&amp;L</span><span></span>
+        </div>
+        <div id="stock-list"></div>
+        <button class="add-hold-btn" onclick="addHolding('stocks')">+ Add Stock</button>
+        <button class="save-port-btn" onclick="savePortfolioData()">✓ Save Portfolio</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="chead"><div class="cicon">📦</div><div class="ctitle">Mutual Funds</div><span class="cbadge" id="mf-badge">—</span></div>
+      <div class="cbody">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.48rem;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);display:grid;grid-template-columns:1fr 90px 90px 80px 28px;gap:6px;padding-bottom:6px;border-bottom:1px solid var(--brd)">
+          <span>Fund</span><span>Invested</span><span>Current</span><span style="text-align:right">P&amp;L</span><span></span>
+        </div>
+        <div id="mf-list"></div>
+        <button class="add-hold-btn" onclick="addHolding('mf')">+ Add Fund</button>
+        <button class="save-port-btn" onclick="savePortfolioData()">✓ Save Portfolio</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="chead"><div class="cicon">🛡️</div><div class="ctitle">Insurance</div><span class="cbadge" style="color:var(--amber)">Details not set</span></div>
+    <div class="cbody">
+      <div class="ins-box">
+        <div>
+          <div style="font-size:.86rem;font-weight:700;margin-bottom:3px">Maturity Payout</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--t2)">Provider and status not set</div>
+          <div class="ins-badge">Status not set</div>
+        </div>
+        <div style="text-align:right">
+          <div class="ins-amt" id="insur-payout-display" style="cursor:pointer" onclick="editInsurPayout()">₹0</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.54rem;color:var(--t3);margin-top:3px">Expected payout · click to edit</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="chead"><div class="cicon">💵</div><div class="ctitle">Money to Receive</div><span class="cbadge" style="color:var(--mint)" id="recv-total-badge">₹0</span></div>
+    <div class="cbody" id="recv-body"></div>
+  </div>
+</div>
+</div>
+
+<!-- BUDGET -->
+<div class="page" id="pg-budget">
+<div class="pw">
+  <div class="phead"><div class="ptitle">Budget</div><div class="psub" id="budget-psub">Income · Needs · Wants · Debt · Savings</div></div>
+  <div id="budget-wrap"></div>
+</div>
+</div>
+
+<!-- TRACKER -->
+<div class="page" id="pg-tracker">
+<div class="pw">
+  <div class="phead"><div class="ptitle">Monthly Tracker</div><div class="psub">Log · History · Trends</div></div>
+  <div class="card">
+    <div class="chead">
+      <div class="cicon">➕</div><div class="ctitle">Log Month</div>
+      <select id="tracker-month-select" onchange="loadTrackerMonth(this.value)" style="background:var(--s2);border:1px solid var(--brd);border-radius:8px;padding:5px 9px;color:var(--txt);font-family:'JetBrains Mono',monospace;font-size:.63rem;outline:none;cursor:pointer;max-width:180px;transition:border-color .2s" onfocus="this.style.borderColor='rgba(232,184,75,.5)'" onblur="this.style.borderColor='var(--brd)'"></select>
+      <span class="cbadge" id="log-month-badge" style="color:var(--gold)">—</span>
+    </div>
+    <div class="cbody" id="log-form-body"></div>
+  </div>
+  <div class="card">
+    <div class="chead"><div class="cicon">📋</div><div class="ctitle">Monthly History</div><span class="cbadge" id="history-count">0 months</span></div>
+    <div class="cbody" id="history-table-wrap"></div>
+  </div>
+  <div class="card"><div class="chead"><div class="cicon">📊</div><div class="ctitle">Net Position Trend</div></div><div class="cbody"><canvas id="chart-net" style="width:100%;display:block"></canvas></div></div>
+  <div class="card"><div class="chead"><div class="cicon">💳</div><div class="ctitle">CC Bills Trend</div></div><div class="cbody"><canvas id="chart-bills" style="width:100%;display:block"></canvas></div></div>
+  <div class="card"><div class="chead"><div class="cicon">💰</div><div class="ctitle">Balance vs Outflow</div></div><div class="cbody"><canvas id="chart-bal" style="width:100%;display:block"></canvas></div></div>
+  <div class="card">
+    <div class="chead"><div class="cicon">🗑️</div><div class="ctitle">Danger Zone</div><span class="cbadge" style="color:var(--red)">Destructive</span></div>
+    <div class="cbody">
+      <div style="font-size:.76rem;color:var(--t2);margin-bottom:12px">Clear all saved monthly history. This cannot be undone.</div>
+      <button onclick="clearHistory()" style="padding:8px 18px;background:rgba(240,68,68,.12);color:var(--red);border:1px solid rgba(240,68,68,.25);border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.76rem;cursor:pointer;transition:all .2s" onmouseover="this.style.background='rgba(240,68,68,.22)'" onmouseout="this.style.background='rgba(240,68,68,.12)'">Clear All History</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- SETTINGS -->
+<div class="page" id="pg-settings">
+<div class="pw">
+  <div class="phead"><div class="ptitle">Settings</div><div class="psub">Data · Export · Import · Reset</div></div>
+  <div class="card">
+    <div class="chead"><div class="cicon">💾</div><div class="ctitle">Data Management</div></div>
+    <div class="cbody">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <button onclick="exportData()" style="padding:12px;background:rgba(79,138,255,.12);color:var(--blue);border:1px solid rgba(79,138,255,.22);border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.8rem;cursor:pointer;transition:all .15s" onmouseover="this.style.background='rgba(79,138,255,.22)'" onmouseout="this.style.background='rgba(79,138,255,.12)'">📤 Export Backup</button>
+        <button onclick="importData()" style="padding:12px;background:rgba(232,184,75,.12);color:var(--gold);border:1px solid rgba(232,184,75,.22);border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.8rem;cursor:pointer;transition:all .15s" onmouseover="this.style.background='rgba(232,184,75,.22)'" onmouseout="this.style.background='rgba(232,184,75,.12)'">📥 Import Backup</button>
+      </div>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)">
+      <div style="font-size:.7rem;color:var(--t2);line-height:1.7;margin-bottom:14px">Export saves all your data (cards, budget, history, receivables, portfolio) as a JSON file. Import restores it. Use to back up or transfer between devices.</div>
+      <button onclick="resetAllData()" style="width:100%;padding:11px;background:rgba(240,68,68,.12);color:var(--red);border:1px solid rgba(240,68,68,.25);border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.8rem;cursor:pointer;transition:all .15s" onmouseover="this.style.background='rgba(240,68,68,.22)'" onmouseout="this.style.background='rgba(240,68,68,.12)'">🗑️ Reset All Data</button>
+      <div style="font-size:.62rem;color:var(--t3);margin-top:6px">Permanently deletes all stored data. Cannot be undone.</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="chead"><div class="cicon">📊</div><div class="ctitle">Stored Data Summary</div></div>
+    <div class="cbody" id="settings-summary"></div>
+  </div>
+</div>
+</div>
+
+</main>
+</div>
+
+<nav class="mobnav">
+  <div class="mobnav-inner">
+    <button class="mb on" onclick="go('dash')"><span class="mb-icon">◈</span>Home</button>
+    <button class="mb" onclick="go('cards')"><span class="mb-icon">▣</span>Cards</button>
+    <button class="mb" onclick="go('portfolio')"><span class="mb-icon">◎</span>Assets</button>
+    <button class="mb" onclick="go('budget')"><span class="mb-icon">⊞</span>Budget</button>
+    <button class="mb" onclick="go('tracker')"><span class="mb-icon">📈</span>Track</button>
+    <button class="mb" onclick="go('settings')"><span class="mb-icon">⚙️</span>More</button>
+  </div>
+</nav>
+
+<script>
+// ═══════════════════════════════════════════════
+//  STORAGE KEYS
+// ═══════════════════════════════════════════════
+const LOAN_KEY  = "vault_loan_v1";
+const PAID_KEY  = "vault_paid_v1";
+const BV2_KEY   = "vault_budget_v2";
+const CIBIL_KEY = "vault_cibil_v1";
+const INSUR_KEY = "vault_insur_v1";
+const RECV_KEY  = "vault_recv_v1";
+const STORE_KEY = "vault_monthly_v1";
+const PORT_KEY  = "vault_port_v2";
+const LAST_AN   = "vault_last_analysis_v1";
+
+// ═══════════════════════════════════════════════
+//  STATIC DATA
+// ═══════════════════════════════════════════════
+const CARDS = [
+  {id:"card1",       name:"Card 1", bank:"Bank", net:"VISA",  col:"#4f8aff", limit:0, shared:false, billDate:null, dueDate:null, bill:0, notes:""},
+  {id:"card2",     name:"Card 2", bank:"Bank", net:"VISA",  col:"#8b5cf6", limit:0, shared:false, billDate:null, dueDate:null, bill:0, notes:""},
+  {id:"card3", name:"Card 3", bank:"Bank", net:"MC",    col:"#f04444", limit:0, shared:false, billDate:null, dueDate:null, bill:0, notes:""},
+  {id:"card4",       name:"Card 4", bank:"Bank", net:"RUPAY", col:"#00c896", limit:0, shared:false, billDate:null, dueDate:null, bill:0, notes:""},
+  {id:"card5",       name:"Card 5", bank:"Bank", net:"RUPAY", col:"#f59e0b", limit:0, shared:false, billDate:null, dueDate:null, bill:0, notes:""},
+  {id:"card6",    name:"Card 6", bank:"Bank", net:"VISA",  col:"#8b5cf6", limit:0, shared:false, billDate:null, dueDate:null, bill:0, notes:""},
+  {id:"card7",  name:"Card 7", bank:"Bank", net:"MC",    col:"#4f9eff", limit:0, shared:false, billDate:null, dueDate:null, bill:0, notes:""},
+];
+const CARD_BANK_KEY = {card1:"bank1",card2:"bank1",card3:"bank2",card4:"bank3",card5:"bank4",card6:"bank5",card7:"bank6"};
+const BANK_NAMES    = {bank1:"Bank",bank2:"Bank",bank3:"Bank",bank4:"Bank",bank5:"Bank",bank6:"Bank"};
+
+const CATS = [
+  {id:"shopping", name:"Shopping",        icon:"🛍️", col:"#4f8aff", budget:0, spent:0},
+  {id:"food",     name:"Food & Dining",   icon:"🍽️", col:"#f04444", budget:0, spent:0},
+  {id:"transfer", name:"Money Transfers", icon:"↗️",  col:"#f59e0b", budget:0, spent:0},
+  {id:"bills",    name:"Bills",           icon:"📄", col:"#8b5cf6", budget:0, spent:0},
+  {id:"grocery",  name:"Grocery",         icon:"🛒", col:"#00c896", budget:0, spent:0},
+  {id:"subs",     name:"Subscriptions",   icon:"📱", col:"#e8b84b", budget:0, spent:0},
+  {id:"travel",   name:"Travel",          icon:"✈️",  col:"#06b6d4", budget:0, spent:0},
+];
+const INCOME = 0;
+
+const LOAN_CONFIG = {
+  name:"Loan", bank:"Bank",
+  totalAmount:0, emi:0, totalEMIs:0, dueDay:1,
+  startDate:new Date(), endDate:new Date(),
+};
+
+// ═══════════════════════════════════════════════
+//  PORTFOLIO (editable, persisted)
+// ═══════════════════════════════════════════════
+const DEFAULT_PORT = {
+  stocks:[
+    
+  ],
+  mf:[
+    
+  ]
+};
+
+function loadPort(){
+  try{ const d=JSON.parse(localStorage.getItem(PORT_KEY)); if(d&&Array.isArray(d.stocks))return d; }catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT_PORT));
+}
+function savePort(d){ localStorage.setItem(PORT_KEY,JSON.stringify(d)); }
+
+function readPortFromDOM(){
+  const port=loadPort();
+  ['stocks','mf'].forEach(type=>{
+    port[type].forEach(h=>{
+      const ni=document.getElementById('h_name_'+h.id);
+      const ii=document.getElementById('h_inv_'+h.id);
+      const ci=document.getElementById('h_cur_'+h.id);
+      if(ni)h.name=ni.value||h.name;
+      if(ii)h.invested=Number(ii.value)||0;
+      if(ci)h.current=Number(ci.value)||0;
+    });
+  });
+  return port;
+}
+
+function savePortfolioData(){
+  const port=readPortFromDOM();
+  savePort(port);
+  buildPortfolio();
+  showToast("Portfolio saved");
+}
+
+function addHolding(type){
+  const port=readPortFromDOM();
+  const id=type+"_"+Date.now();
+  port[type].push({id,name:type==='stocks'?'New Stock':'New Fund',invested:0,current:0});
+  savePort(port);
+  buildPortfolio();
+  showToast("Row added — fill in details & save");
+}
+
+function removeHolding(type,id){
+  const port=readPortFromDOM();
+  port[type]=port[type].filter(h=>h.id!==id);
+  savePort(port);
+  buildPortfolio();
+  showToast("Removed");
+}
+
+// ═══════════════════════════════════════════════
+//  LOAN STATE
+// ═══════════════════════════════════════════════
+// Sample loan payment history; customize this in the app.
+const LOAN_SEED = {paidMonths:[]};
+function loadLoanState(){
+  try{ const d=JSON.parse(localStorage.getItem(LOAN_KEY)); if(d&&Array.isArray(d.paidMonths))return d; }catch(e){}
+  const initial={paidMonths:[...LOAN_SEED.paidMonths]};
+  saveLoanState(initial); return initial;
+}
+function saveLoanState(d){ localStorage.setItem(LOAN_KEY,JSON.stringify(d)); }
+function getLoanPaidCount(){ return loadLoanState().paidMonths.length; }
+function getLoanRemaining(){ return Math.max(0,LOAN_CONFIG.totalAmount-getLoanPaidCount()*LOAN_CONFIG.emi); }
+function emiMonthKey(){ const n=new Date(); return `${n.getFullYear()}-${n.getMonth()}`; }
+function isEMIPaidThisMonth(){ return loadLoanState().paidMonths.includes(emiMonthKey()); }
+
+function markEMIPaid(){
+  const s=loadLoanState(),key=emiMonthKey();
+  if(!s.paidMonths.includes(key)) s.paidMonths.push(key);
+  saveLoanState(s); buildLoanCard(); refresh();
+  const MNAMES=["January","February","March","April","May","June","July","August","September","October","November","December"];
+  showToast(`${MNAMES[new Date().getMonth()]} EMI marked as paid ✓`);
+}
+function unmarkEMIPaid(){
+  const s=loadLoanState(),key=emiMonthKey();
+  s.paidMonths=s.paidMonths.filter(k=>k!==key);
+  saveLoanState(s); buildLoanCard(); refresh(); showToast("EMI payment undone");
+}
+
+// ═══════════════════════════════════════════════
+//  PAID STATE (cards)
+// ═══════════════════════════════════════════════
+function paidMonthKey(){ const n=new Date(); return `${n.getFullYear()}-${n.getMonth()}`; }
+function loadPaid(){ try{ return JSON.parse(localStorage.getItem(PAID_KEY))||{}; }catch(e){ return {}; } }
+function savePaid(d){ localStorage.setItem(PAID_KEY,JSON.stringify(d)); }
+function isPaid(id){ const d=loadPaid(),k=id+"_"+paidMonthKey(); return !!(d[k]?.paid); }
+function getRawBill(id){ const e=document.getElementById(id+"_b"); return e?Number(e.value)||0:(CARDS.find(c=>c.id===id)?.bill||0); }
+function getBill(id){ return isPaid(id)?0:getRawBill(id); }
+function getLim(id){ const e=document.getElementById(id+"_l"); const card=CARDS.find(c=>c.id===id); return e?Number(e.value)||card.limit:card.limit; }
+
+function markCardPaid(id){
+  const bill=getRawBill(id),d=loadPaid(),k=id+"_"+paidMonthKey();
+  d[k]={paid:true,paidAt:new Date().toISOString(),origBill:bill};
+  savePaid(d); buildCCList(); updatePool(); refresh(); showToast("Marked as paid ✓");
+}
+function unmarkCardPaid(id){
+  const d=loadPaid(),k=id+"_"+paidMonthKey();
+  if(d[k])d[k].paid=false;
+  savePaid(d); buildCCList(); updatePool(); refresh(); showToast("Payment unmarked");
+}
+function resetAllPaid(){
+  if(!confirm("Reset ALL cards' paid status for this month?")) return;
+  const d=loadPaid(),k=paidMonthKey();
+  Object.keys(d).forEach(key=>{ if(key.includes(k)) d[key].paid=false; });
+  savePaid(d); buildCCList(); updatePool(); refresh(); showToast("All paid status reset");
+}
+
+// ═══════════════════════════════════════════════
+//  CIBIL & INSURANCE
+// ═══════════════════════════════════════════════
+function loadCIBIL(){ try{ const v=JSON.parse(localStorage.getItem(CIBIL_KEY)); return Number.isFinite(v)&&v>=300&&v<=900?v:0; }catch(e){ return 0; } }
+function saveCIBIL(s){ localStorage.setItem(CIBIL_KEY,JSON.stringify(s)); }
+function editCIBIL(){
+  const c=loadCIBIL();
+  const i=prompt("Enter your CIBIL score (300–900):",c);
+  if(!i)return;
+  const s=Number(i);
+  if(isNaN(s)||s<300||s>900){ showToast("Invalid score (300–900)"); return; }
+  saveCIBIL(s); buildDash(); showToast("CIBIL score updated");
+}
+function loadInsur(){ try{ const d=JSON.parse(localStorage.getItem(INSUR_KEY)); return d&&Number.isFinite(d.payout)?d:{payout:0}; }catch(e){ return {payout:0}; } }
+function saveInsur(d){ localStorage.setItem(INSUR_KEY,JSON.stringify(d)); }
+function editInsurPayout(){
+  const c=loadInsur().payout;
+  const i=prompt("Enter insurance payout amount (₹):",c);
+  if(!i)return;
+  const a=Number(i);
+  if(isNaN(a)||a<0){ showToast("Invalid amount"); return; }
+  saveInsur({payout:a});
+  document.getElementById("insur-payout-display").textContent="₹"+a.toLocaleString("en-IN");
+  buildPortfolio(); showToast("Insurance payout updated");
+}
+
+// ═══════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════
+const fmt=n=>"₹"+Number(n||0).toLocaleString("en-IN",{maximumFractionDigits:0});
+const fmtD=n=>"₹"+Number(n||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+const gi=id=>{ const e=document.getElementById(id); return e?Number(e.value)||0:0; };
+const st=(id,t)=>{ const e=document.getElementById(id); if(e)e.textContent=t; };
+const sh=(id,h)=>{ const e=document.getElementById(id); if(e)e.innerHTML=h; };
+const ord=n=>{ if(!n)return""; const s=["th","st","nd","rd"],v=n%100; return s[(v-20)%10]||s[v]||s[0]; };
+const MNAMES=["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+function daysTo(d){
+  if(!d)return null;
+  const now=new Date(); now.setHours(0,0,0,0);
+  const t1=new Date(now.getFullYear(),now.getMonth(),d);
+  const t2=new Date(now.getFullYear(),now.getMonth()+1,d);
+  return Math.round(((t1>=now?t1:t2)-now)/86400000);
+}
+function dueBadge(d){
+  if(d===null) return`<span class="dc none">—</span>`;
+  if(d<0) return`<span class="dc urg">Overdue</span>`;
+  if(d===0) return`<span class="dc urg">Today!</span>`;
+  if(d<=3) return`<span class="dc urg">${d}d left</span>`;
+  if(d<=7) return`<span class="dc soon">${d}d left</span>`;
+  return`<span class="dc ok">${d}d left</span>`;
+}
+function uCol(p){ if(p>=75)return"linear-gradient(90deg,#c81a1a,#f04444)"; if(p>=50)return"linear-gradient(90deg,#c97306,#f59e0b)"; if(p>=30)return"linear-gradient(90deg,#2255cc,#4f8aff)"; return"linear-gradient(90deg,#0891b2,#00c896)"; }
+function uTxt(p){ return p>=75?"var(--red)":p>=50?"var(--amber)":p>=30?"var(--blue)":"var(--mint)"; }
+
+function countUp(el,target,dur=900){
+  if(!el)return;
+  const start=Date.now();
+  const step=()=>{
+    const p=Math.min(1,(Date.now()-start)/dur);
+    const ease=1-Math.pow(1-p,3);
+    const cur=Math.round(ease*Math.abs(target));
+    el.textContent="₹"+(target<0?"-":"")+cur.toLocaleString("en-IN");
+    if(p<1)requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+function ringHTML(pct,col,size=80,centerText=null){
+  const r=32,c=size/2,circ=2*Math.PI*r;
+  const offset=circ-(pct/100)*circ;
+  const tc=col||"#00c896";
+  const display=centerText!==null?centerText:pct.toFixed(0)+"%";
+  return`<svg width="${size}" height="${size}" class="ring-svg" viewBox="0 0 ${size} ${size}">
+    <circle class="ring-track" cx="${c}" cy="${c}" r="${r}"/>
+    <circle class="ring-fill" cx="${c}" cy="${c}" r="${r}" stroke="${tc}" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"/>
+    <text x="${c}" y="${c-5}" class="ring-pct-txt" fill="${tc}" style="font-size:${centerText?'10':'11'}px">${display}</text>
+    <text x="${c}" y="${c+8}" class="ring-lbl-txt">UTIL</text>
+  </svg>`;
+}
+
+function donutHTML(slices,size=140){
+  const total=slices.reduce((s,x)=>s+x.v,0);
+  if(!total)return"";
+  let angle=-90,paths="";
+  slices.forEach(s=>{
+    const deg=(s.v/total)*360,r=54,ox=size/2,oy=size/2;
+    const a1=angle*(Math.PI/180),a2=(angle+deg)*(Math.PI/180);
+    const x1=ox+r*Math.cos(a1),y1=oy+r*Math.sin(a1);
+    const x2=ox+r*Math.cos(a2),y2=oy+r*Math.sin(a2);
+    paths+=`<path d="M${ox},${oy} L${x1},${y1} A${r},${r} 0 ${deg>180?1:0} 1 ${x2},${y2} Z" fill="${s.col}" opacity=".85"/>`;
+    angle+=deg;
+  });
+  return`<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${paths}
+    <circle cx="${size/2}" cy="${size/2}" r="34" fill="var(--s1)"/>
+    <text x="${size/2}" y="${size/2-4}" text-anchor="middle" dominant-baseline="central" fill="var(--t2)" style="font-family:'JetBrains Mono',monospace;font-size:7px;letter-spacing:.05em;text-transform:uppercase">SPEND</text>
+    <text x="${size/2}" y="${size/2+8}" text-anchor="middle" dominant-baseline="central" fill="var(--txt)" style="font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600">${fmt(total)}</text>
+  </svg>`;
+}
+
+function showToast(msg="Saved"){
+  const t=document.getElementById("toast");
+  t.textContent="✓ "+msg; t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),2200);
+}
+
+// ═══════════════════════════════════════════════
+//  CREDIT CARDS
+// ═══════════════════════════════════════════════
+function buildCCList(){
+  const wrap=document.getElementById("cc-list");
+  if(!wrap)return;
+  let html="",lastBank="";
+  CARDS.forEach(c=>{
+    const bk=CARD_BANK_KEY[c.id];
+    if(bk!==lastBank&&c.id!=="card2"){ html+=`<div class="bdiv">🏦 ${BANK_NAMES[bk]}</div>`; lastBank=bk; }
+    if(c.id==="card2")lastBank=bk;
+
+    const paid=isPaid(c.id),rawBill=getRawBill(c.id)||c.bill||0,bill=paid?0:rawBill;
+    const lim=c.limit,pct=lim>0?Math.min(100,(bill/lim)*100):0;
+    const dl=daysTo(c.dueDate);
+
+    const utilChip=paid?`<span class="chip gn">PAID ✓</span>`:pct>=75?`<span class="chip rd">HIGH RISK</span>`:pct>=50?`<span class="chip am">MODERATE</span>`:rawBill>0?`<span class="chip gn">HEALTHY</span>`:`<span class="chip">CLEAR</span>`;
+
+    const paidBanner=paid?`
+      <div style="background:rgba(0,200,150,.08);border-top:1px solid rgba(0,200,150,.2);border-bottom:1px solid rgba(0,200,150,.2);padding:10px 17px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div style="display:flex;align-items:center;gap:9px">
+          <div style="width:26px;height:26px;border-radius:50%;background:rgba(0,200,150,.15);border:1px solid rgba(0,200,150,.3);display:flex;align-items:center;justify-content:center;font-size:.85rem">✓</div>
+          <div><div style="font-size:.78rem;font-weight:700;color:var(--mint)">Bill Paid This Month</div><div style="font-family:'JetBrains Mono',monospace;font-size:.56rem;color:var(--t3)">Original: ${fmtD(rawBill)} · Cleared</div></div>
+        </div>
+        <button onclick="unmarkCardPaid('${c.id}')" style="padding:5px 11px;font-size:.63rem;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;background:rgba(255,255,255,.05);color:var(--t2);border:1px solid var(--brd);border-radius:7px;cursor:pointer;white-space:nowrap;transition:all .15s" onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='rgba(255,255,255,.05)'">↩ Undo</button>
+      </div>`
+    :rawBill>0?`<button onclick="markCardPaid('${c.id}')" style="width:100%;padding:11px 17px;background:rgba(0,200,150,.08);border:none;border-top:1px solid rgba(0,200,150,.15);color:var(--mint);font-family:'Plus Jakarta Sans',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;transition:background .15s" onmouseover="this.style.background='rgba(0,200,150,.15)'" onmouseout="this.style.background='rgba(0,200,150,.08)'">
+      <span style="font-size:.9rem">✅</span> Mark Bill as Paid — ${fmtD(rawBill)}
+    </button>`:"";
+
+    html+=`
+    <div class="ccc" id="ccc-${c.id}" style="${paid?'opacity:.88':''}">
+      <div style="height:3px;background:${paid?'var(--mint)':c.col};opacity:.9"></div>
+      <div class="ccc-inner">
+        <div class="ccc-row1">
+          <div>
+            <div class="ccc-name">${c.name}</div><div class="ccc-bank">${c.bank}</div>
+            <div class="ccc-chips"><span class="chip">${c.net}</span>${c.shared?'<span class="chip bl">SHARED POOL</span>':''}${utilChip}</div>
+          </div>
+          ${paid?`<span class="dc ok">Paid ✓</span>`:dueBadge(dl)}
+        </div>
+        <div class="ccc-ring-bill">
+          <div>${ringHTML(pct,paid?'#00c896':c.col,86)}</div>
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:.48rem;letter-spacing:.14em;text-transform:uppercase;color:var(--t3);margin-bottom:4px">Current Bill</div>
+            <div class="ccc-bill-amt" id="${c.id}_bdisp" style="color:${paid?'var(--mint)':rawBill>0?c.col:'var(--t3)'}">
+              ${paid?`<span style="text-decoration:line-through;opacity:.5">${fmtD(rawBill)}</span>`:rawBill>0?fmtD(rawBill):"No Bill"}
+            </div>
+            <div class="ccc-limit-info">Limit: ${fmt(lim)}${c.shared?" (shared)":""}</div>
+            <div class="ccc-avail" style="color:${pct<30?'var(--mint)':pct<75?'var(--amber)':'var(--red)'}">Available: ${fmt(Math.max(0,lim-bill))}</div>
+          </div>
+        </div>
+        <div class="util-bar-wrap">
+          <div class="util-bar-hd"><span class="util-bar-lbl">Utilization</span><span class="util-bar-pct" style="color:${paid?'var(--mint)':uTxt(pct)}">${pct.toFixed(1)}%</span></div>
+          <div class="util-track"><div class="util-fill" style="width:${pct}%;background:${paid?'var(--mint)':uCol(pct)}"></div></div>
+          <div class="util-ticks"><span class="utick">0</span><span class="utick">30%</span><span class="utick">50%</span><span class="utick">75%</span><span class="utick">100%</span></div>
+        </div>
+      </div>
+      ${paidBanner}
+      <div class="ccc-dates">
+        <div class="ccd"><div class="ccd-lbl">📋 Bill Date</div><div class="ccd-val">${c.billDate?c.billDate+ord(c.billDate):"—"}</div><div class="ccd-sub">${c.billDate?"Cycle closes "+c.billDate+ord(c.billDate):"Not set"}</div></div>
+        <div class="ccd"><div class="ccd-lbl">⏰ Due Date</div><div class="ccd-val">${c.dueDate?c.dueDate+ord(c.dueDate):"—"}</div><div class="ccd-sub">${dl!==null?(dl<=0?"Action needed!":dl+" days away"):"Not set"}</div></div>
+        <div class="ccd"><div class="ccd-lbl">📝 Used For</div><div class="ccd-val" style="font-size:.68rem;font-weight:500;color:var(--t2);font-family:'Plus Jakarta Sans',sans-serif;line-height:1.4">${c.notes}</div></div>
+      </div>
+      <button class="ccc-edit-toggle" id="${c.id}_toggle" onclick="toggleEdit('${c.id}')">✏️ Update Bill & Limit</button>
+      <div class="ccc-edit" id="${c.id}_edit">
+        <div class="field"><label>Current Bill (₹)</label><input type="number" id="${c.id}_b" value="${rawBill||''}" placeholder="0.00"></div>
+        <div class="field"><label>Credit Limit (₹)</label><input type="number" id="${c.id}_l" value="${lim}"></div>
+        <button class="ccc-save-btn" onclick="saveCard('${c.id}')">✓ Save Changes</button>
+      </div>
+    </div>`;
+  });
+  wrap.innerHTML=html;
+}
+
+function toggleEdit(id){
+  const edit=document.getElementById(id+"_edit"),btn=document.getElementById(id+"_toggle");
+  if(!edit)return;
+  const open=edit.classList.toggle("open");
+  if(btn){btn.classList.toggle("active",open);btn.textContent=open?"✕ Close":"✏️ Update Bill & Limit";}
+}
+function saveCard(id){
+  updatePool(); refresh();
+  const edit=document.getElementById(id+"_edit"),btn=document.getElementById(id+"_toggle");
+  if(edit)edit.classList.remove("open");
+  if(btn){btn.classList.remove("active");btn.textContent="✏️ Update Bill & Limit";}
+  buildCCList(); showToast("Card updated");
+}
+function updatePool(){
+  const used=getBill("card1")+getBill("card2"),poolLimit=Math.max(getLim("card1"),getLim("card2"));
+  const pct=poolLimit>0?Math.min(100,(used/poolLimit)*100):0;
+  const fill=document.getElementById("pool-fill");
+  if(fill)fill.style.width=pct+"%";
+  st("pool-used",fmt(used)); st("pool-free",fmt(Math.max(0,poolLimit-used)));
+  const pel=document.getElementById("pool-pct");
+  if(pel){pel.textContent=pct.toFixed(1)+"%";pel.style.color=uTxt(pct);}
+}
+
+// ═══════════════════════════════════════════════
+//  LOAN TRACKER CARD
+// ═══════════════════════════════════════════════
+function buildLoanCard(){
+  const el=document.getElementById("loan-card");
+  if(!el)return;
+  const L=LOAN_CONFIG;
+  if(L.emi<=0||L.totalEMIs<=0){el.innerHTML="";return;}
+  const paidCount=getLoanPaidCount(),remaining=getLoanRemaining();
+  const total=L.totalEMIs,unpaid=total-paidCount;
+  const paidPct=total?Math.min(100,Math.round((paidCount/total)*100)):0,amtPaid=paidCount*L.emi;
+  const now=new Date(),emiPaid=isEMIPaidThisMonth();
+  const curMonthName=MNAMES[now.getMonth()];
+  const paidMonths=loadLoanState().paidMonths;
+
+  let dots="";
+  for(let i=0;i<total;i++){
+    const emiDate=new Date(L.startDate.getFullYear(),L.startDate.getMonth()+i,L.dueDay);
+    const mLabel=MNAMES[emiDate.getMonth()].slice(0,3)+"'"+String(emiDate.getFullYear()).slice(2);
+    const mKey=`${emiDate.getFullYear()}-${emiDate.getMonth()}`;
+    const isDotPaid=paidMonths.includes(mKey);
+    const isCurrent=!isDotPaid&&i===paidCount;
+    const cls=isDotPaid?"paid":isCurrent?"current":"upcoming";
+    dots+=`<div style="display:flex;flex-direction:column;align-items:center">
+      <div class="emi-dot ${cls}" title="EMI ${i+1} — ${MNAMES[emiDate.getMonth()]} ${emiDate.getFullYear()}">${isDotPaid?"✓":(i+1)}</div>
+      <div class="emi-dot-lbl">${mLabel}</div>
+    </div>`;
+  }
+
+  const todayFlat=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const thisMonthDue=new Date(now.getFullYear(),now.getMonth(),L.dueDay);
+  thisMonthDue.setHours(0,0,0,0);
+  const nextEMI=emiPaid?new Date(now.getFullYear(),now.getMonth()+1,L.dueDay):(todayFlat<=thisMonthDue?thisMonthDue:new Date(now.getFullYear(),now.getMonth()+1,L.dueDay));
+  const daysToNext=Math.round((nextEMI-todayFlat)/86400000);
+  const nextLabel=emiPaid?`Next: ${daysToNext}d (${MNAMES[nextEMI.getMonth()].slice(0,3)} ${L.dueDay})`:daysToNext<0?"Overdue":daysToNext===0?"Due Today!":daysToNext+"d";
+  const nextCol=emiPaid?"var(--mint)":daysToNext<=0?"var(--red)":daysToNext<=5?"var(--amber)":"var(--mint)";
+
+  const paidSection=emiPaid?`
+    <div style="background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.2);border-radius:12px;padding:14px 15px;margin-top:4px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(0,200,150,.15);border:1px solid rgba(0,200,150,.3);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">✓</div>
+        <div>
+          <div style="font-size:.8rem;font-weight:700;color:var(--mint)">${curMonthName} EMI Paid ✓</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.56rem;color:var(--t3);margin-top:2px">₹${L.emi.toLocaleString("en-IN")} cleared · ${unpaid} EMI${unpaid!==1?'s':''} remaining · ${fmt(remaining)} outstanding</div>
+        </div>
+      </div>
+      <button onclick="unmarkEMIPaid()" style="padding:6px 13px;font-size:.66rem;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;background:rgba(255,255,255,.05);color:var(--t2);border:1px solid var(--brd);border-radius:8px;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0" onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='rgba(255,255,255,.05)'">↩ Undo</button>
+    </div>`
+  :`<button onclick="markEMIPaid()" style="width:100%;padding:13px 15px;background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.2);border-radius:12px;color:var(--mint);font-family:'Plus Jakarta Sans',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;transition:background .15s;margin-top:4px" onmouseover="this.style.background='rgba(0,200,150,.16)'" onmouseout="this.style.background='rgba(0,200,150,.08)'">
+    <span style="font-size:1.1rem">✅</span>
+    <div>
+      <div>Mark ${curMonthName} EMI as Paid — ₹${L.emi.toLocaleString("en-IN")}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.54rem;color:var(--t3);font-weight:400;margin-top:2px">${paidCount}/${total} paid · ${fmt(remaining)} outstanding</div>
+    </div>
+  </button>`;
+
+  el.innerHTML=`<div class="loan-card">
+    <div class="loan-header">
+      <div><div class="loan-name">${L.name}</div><div class="loan-bank">${L.bank} · Loan schedule not set</div></div>
+      <div style="text-align:right"><div class="loan-total">${fmt(L.totalAmount)}</div><div class="loan-remaining">Outstanding: ${fmt(remaining)}</div></div>
+    </div>
+    <div class="loan-progress-wrap">
+      <div class="loan-progress-hd"><span class="loan-progress-lbl">Repayment Progress</span><span class="loan-progress-pct">${paidPct}% paid (${paidCount}/${total} EMIs)</span></div>
+      <div class="loan-track"><div class="loan-fill" style="width:${paidPct}%"></div></div>
+    </div>
+    <div class="loan-stats">
+      <div class="loan-stat"><div class="loan-stat-lbl">Monthly EMI</div><div class="loan-stat-val" style="color:var(--blue)">${fmt(L.emi)}</div></div>
+      <div class="loan-stat"><div class="loan-stat-lbl">EMIs Left</div><div class="loan-stat-val" style="color:var(--amber)">${unpaid} / ${total}</div></div>
+      <div class="loan-stat"><div class="loan-stat-lbl">Amount Paid</div><div class="loan-stat-val" style="color:var(--mint)">${fmt(amtPaid)}</div></div>
+      <div class="loan-stat"><div class="loan-stat-lbl">${emiPaid?"Next EMI":"Due"}</div><div class="loan-stat-val" style="color:${nextCol}">${nextLabel}</div></div>
+      <div class="loan-stat"><div class="loan-stat-lbl">Start Date</div><div class="loan-stat-val" style="font-size:.7rem">Not set</div></div>
+      <div class="loan-stat"><div class="loan-stat-lbl">End Date</div><div class="loan-stat-val" style="font-size:.7rem">Not set</div></div>
+    </div>
+    ${paidSection}
+    <div style="margin-top:14px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:7px">EMI Timeline (${paidCount} paid, ${unpaid} remaining)</div>
+      <div class="emi-timeline">${dots}</div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════
+//  RECEIVABLES
+// ═══════════════════════════════════════════════
+function loadRecv(){
+  try{ const d=JSON.parse(localStorage.getItem(RECV_KEY)); if(d&&Array.isArray(d))return d; }catch(e){}
+  return [];
+}
+function saveRecv(d){ localStorage.setItem(RECV_KEY,JSON.stringify(d)); }
+
+function buildRecv(){
+  const data=loadRecv(),pending=data.filter(r=>!r.received),done=data.filter(r=>r.received);
+  const total=pending.reduce((s,r)=>s+r.amount,0);
+  st("recv-total-badge","₹"+total.toLocaleString("en-IN")+(done.length>0?" ("+done.length+" received)":""));
+  let html="";
+  if(pending.length){
+    pending.forEach(r=>{
+      html+=`<div class="rrow">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0"></div>
+          <span style="font-weight:500">${r.name}</span>
+          <input type="number" value="${r.amount}" id="recv_amt_${r.id}" style="width:85px;padding:3px 7px;font-family:'JetBrains Mono',monospace;font-size:.7rem;background:var(--s2);border:1px solid var(--brd);border-radius:6px;color:var(--txt);outline:none" onfocus="this.style.borderColor='rgba(232,184,75,.5)'" onblur="this.style.borderColor='var(--brd)';updateRecvAmt('${r.id}')">
+        </div>
+        <div style="display:flex;align-items:center;gap:7px">
+          <span class="ramt">₹${r.amount.toLocaleString("en-IN")}</span>
+          <button onclick="markReceived('${r.id}')" style="padding:3px 9px;font-size:.58rem;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;background:rgba(0,200,150,.1);color:var(--mint);border:1px solid rgba(0,200,150,.25);border-radius:6px;cursor:pointer;white-space:nowrap;transition:all .15s">Got it ✓</button>
+          <button onclick="deleteRecv('${r.id}')" style="padding:3px 7px;font-size:.58rem;background:rgba(240,68,68,.08);color:var(--red);border:1px solid rgba(240,68,68,.2);border-radius:6px;cursor:pointer;transition:all .15s">✕</button>
+        </div>
+      </div>`;
+    });
+  } else {
+    html+=`<div style="font-family:'JetBrains Mono',monospace;font-size:.63rem;color:var(--mint);padding:8px 0;text-align:center">✓ All received!</div>`;
+  }
+  if(done.length){
+    html+=`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--brd)"><div style="font-family:'JetBrains Mono',monospace;font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:8px">Received ✓</div>`;
+    done.forEach(r=>{
+      html+=`<div class="rrow" style="opacity:.5">
+        <div style="display:flex;align-items:center;gap:8px"><div style="width:7px;height:7px;border-radius:50%;background:var(--mint);flex-shrink:0"></div><span style="text-decoration:line-through;color:var(--t2)">${r.name}</span></div>
+        <div style="display:flex;align-items:center;gap:7px"><span class="ramt" style="text-decoration:line-through">₹${r.amount.toLocaleString("en-IN")}</span><button onclick="undoReceived('${r.id}')" style="padding:2px 7px;font-size:.54rem;font-family:'Plus Jakarta Sans',sans-serif;background:rgba(255,255,255,.05);color:var(--t2);border:1px solid var(--brd);border-radius:5px;cursor:pointer">Undo</button></div>
+      </div>`;
+    });
+    html+="</div>";
+  }
+  html+=`<div class="rrow total" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--brd)"><span style="color:var(--mint)">Pending Total</span><span class="ramt" style="font-weight:700">₹${total.toLocaleString("en-IN")}</span></div>`;
+  html+=`<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--brd);display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end">
+    <div class="field"><label>Name</label><input type="text" id="recv_new_name" placeholder="Person name"></div>
+    <div class="field"><label>Amount (₹)</label><input type="number" id="recv_new_amt" placeholder="0"></div>
+    <button onclick="addRecv()" style="padding:8px 13px;background:rgba(79,138,255,.15);color:var(--blue);border:1px solid rgba(79,138,255,.25);border-radius:8px;font-weight:700;font-size:.7rem;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;height:36px">+ Add</button>
+  </div>`;
+  const el=document.getElementById("recv-body");
+  if(el)el.innerHTML=html;
+}
+
+function markReceived(id){ const d=loadRecv(),r=d.find(x=>x.id===id); if(r){r.received=true;saveRecv(d);buildRecv();showToast("Marked received");} }
+function undoReceived(id){ const d=loadRecv(),r=d.find(x=>x.id===id); if(r){r.received=false;saveRecv(d);buildRecv();} }
+function deleteRecv(id){ let d=loadRecv(); d=d.filter(x=>x.id!==id); saveRecv(d);buildRecv();showToast("Removed"); }
+function updateRecvAmt(id){ const d=loadRecv(),r=d.find(x=>x.id===id),el=document.getElementById("recv_amt_"+id); if(r&&el){r.amount=Number(el.value)||r.amount;saveRecv(d);buildRecv();} }
+function addRecv(){
+  const nameEl=document.getElementById("recv_new_name"),amtEl=document.getElementById("recv_new_amt");
+  const name=(nameEl?.value||"").trim(),amount=Number(amtEl?.value)||0;
+  if(!name||!amount){showToast("Enter name & amount");return;}
+  const d=loadRecv(); d.push({id:"recv_"+Date.now(),name,amount,received:false});
+  saveRecv(d); if(nameEl)nameEl.value=""; if(amtEl)amtEl.value="";
+  buildRecv(); showToast("Added "+name);
+}
+
+// ═══════════════════════════════════════════════
+//  PORTFOLIO
+// ═══════════════════════════════════════════════
+function buildPortfolio(){
+  const port=loadPort();
+  let sI=0,sC=0,sRows="",mI=0,mC=0,mRows="";
+
+  port.stocks.forEach(s=>{
+    const pnl=s.current-s.invested,pp=s.invested>0?((pnl/s.invested)*100):0;
+    sI+=s.invested; sC+=s.current;
+    sRows+=`<div class="port-hold-row">
+      <div><input class="port-input" type="text" id="h_name_${s.id}" value="${s.name}" placeholder="Stock name" style="font-weight:600;font-size:.76rem"><div style="font-family:'JetBrains Mono',monospace;font-size:.52rem;color:var(--t3);margin-top:2px">Invested ${fmt(s.invested)}</div></div>
+      <input class="port-input" type="number" id="h_inv_${s.id}" value="${s.invested}" placeholder="Invested">
+      <input class="port-input" type="number" id="h_cur_${s.id}" value="${s.current}" placeholder="Current">
+      <div class="port-pnl ${pnl>=0?'pos':'neg'}">${pnl>=0?'+':''}${fmt(pnl)}<div style="font-size:.52rem">${pp>=0?'+':''}${pp.toFixed(1)}%</div></div>
+      <button class="del-btn" onclick="removeHolding('stocks','${s.id}')" title="Remove">✕</button>
+    </div>`;
+  });
+  sh("stock-list",sRows);
+
+  port.mf.forEach(m=>{
+    const pnl=m.current-m.invested,pp=m.invested>0?((pnl/m.invested)*100):0;
+    mI+=m.invested; mC+=m.current;
+    mRows+=`<div class="port-hold-row">
+      <div><input class="port-input" type="text" id="h_name_${m.id}" value="${m.name}" placeholder="Fund name" style="font-weight:600;font-size:.76rem"><div style="font-family:'JetBrains Mono',monospace;font-size:.52rem;color:var(--t3);margin-top:2px">Invested ${fmt(m.invested)}</div></div>
+      <input class="port-input" type="number" id="h_inv_${m.id}" value="${m.invested}" placeholder="Invested">
+      <input class="port-input" type="number" id="h_cur_${m.id}" value="${m.current}" placeholder="Current">
+      <div class="port-pnl ${pnl>=0?'pos':'neg'}">${pnl>=0?'+':''}${fmt(pnl)}<div style="font-size:.52rem">${pp>=0?'+':''}${pp.toFixed(1)}%</div></div>
+      <button class="del-btn" onclick="removeHolding('mf','${m.id}')" title="Remove">✕</button>
+    </div>`;
+  });
+  sh("mf-list",mRows);
+
+  const spnl=sC-sI,mpnl=mC-mI,totI=sI+mI,totC=sC+mC,totP=totC-totI;
+  sh("stock-badge",`<span style="color:${spnl>=0?'var(--mint)':'var(--red)'}">${spnl>=0?'+':''}${fmt(spnl)} (${sI>0?((spnl/sI)*100).toFixed(1):0}%)</span>`);
+  sh("mf-badge",`<span style="color:${mpnl>=0?'var(--mint)':'var(--red)'}">${mpnl>=0?'+':''}${fmt(mpnl)} (${mI>0?((mpnl/mI)*100).toFixed(1):0}%)</span>`);
+  const insurAmt=loadInsur().payout;
+  sh("port-stats",`
+    <div class="sc"><div class="sc-accent" style="background:var(--t3)"></div><div class="sc-lbl">Total Invested</div><div class="sc-val">${fmt(totI)}</div></div>
+    <div class="sc"><div class="sc-accent" style="background:${totP>=0?'var(--mint)':'var(--red)'}"></div><div class="sc-lbl">Current Value</div><div class="sc-val ${totP>=0?'g':'r'}">${fmt(totC)}</div></div>
+    <div class="sc"><div class="sc-accent" style="background:${totP>=0?'var(--mint)':'var(--red)'}"></div><div class="sc-lbl">Total P&amp;L</div><div class="sc-val ${totP>=0?'g':'r'}">${totP>=0?'+':''}${fmt(totP)}</div><div class="sc-sub">${totI>0?((totP/totI)*100).toFixed(1):0}%</div></div>
+    <div class="sc"><div class="sc-accent" style="background:var(--blue)"></div><div class="sc-lbl">Insurance</div><div class="sc-val b">${fmt(insurAmt)}</div><div class="sc-sub">Pending claim</div></div>
+  `);
+  const el=document.getElementById("insur-payout-display");
+  if(el)el.textContent=fmt(insurAmt);
+}
+
+// ═══════════════════════════════════════════════
+//  BUDGET
+// ═══════════════════════════════════════════════
+function bLoad(){ try{return JSON.parse(localStorage.getItem(BV2_KEY))||{};}catch(e){return{};} }
+function bSave(o){ localStorage.setItem(BV2_KEY,JSON.stringify(o)); }
+function bGet(k,def){ const s=bLoad(); return s[k]!==undefined?s[k]:def; }
+function bBlur(k){ const el=document.getElementById(k); if(el){const s=bLoad();s[k]=Number(el.value)||0;bSave(s);}budgetRecalc(); }
+
+function brow(label,key,expDef,actDef,col){
+  const exp=bGet(key+"_e",expDef),act=bGet(key+"_a",actDef),over=act>exp&&exp>0;
+  const pct=exp>0?Math.min(120,(act/exp)*100):0;
+  return`<div class="bcat">
+    <div class="bcat-top"><div class="bcat-name">${label}</div>
+      <div class="bcat-right">
+        ${over?`<span class="chip rd">OVER</span>`:''}
+        <span style="font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--t3)">Budget</span>
+        <input type="number" id="${key}_e" value="${exp}" placeholder="0" style="width:73px;padding:3px 7px;font-size:.68rem;border-radius:7px;background:var(--s3);border:1px solid var(--brd);color:var(--txt);font-family:'JetBrains Mono',monospace;outline:none" onfocus="this.style.borderColor='rgba(232,184,75,.4)'" onblur="this.style.borderColor='var(--brd)';bBlur('${key}_e')">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--t3)">Actual</span>
+        <input type="number" id="${key}_a" value="${act}" placeholder="0" style="width:73px;padding:3px 7px;font-size:.68rem;border-radius:7px;background:var(--s3);border:1px solid var(--brd);color:${over?'var(--red)':'var(--txt)'};font-family:'JetBrains Mono',monospace;outline:none" onfocus="this.style.borderColor='rgba(232,184,75,.4)'" onblur="this.style.borderColor='var(--brd)';bBlur('${key}_a')">
+      </div>
+    </div>
+    <div class="bbar-wrap"><div class="bbar-track"><div class="bbar-fill" style="width:${Math.min(100,pct)}%;background:${over?"var(--red)":pct>85?"var(--amber)":col}"></div></div>
+    <div class="bbar-pct" style="color:${over?'var(--red)':pct>85?'var(--amber)':'var(--t3)'}">${Math.round(pct)}%</div></div>
+  </div>`;
+}
+
+function bDebtRow(label,amount,col){
+  return`<div class="bcat"><div class="bcat-top"><div class="bcat-name">${label}</div><div style="font-family:'JetBrains Mono',monospace;font-size:.76rem;color:${col};font-weight:600">${fmt(amount)}</div></div>
+  <div style="height:4px;background:var(--s3);border-radius:10px;overflow:hidden;margin-top:4px"><div style="height:100%;width:100%;background:${col};opacity:.28;border-radius:10px"></div></div></div>`;
+}
+
+function budgetRecalc(){
+  const e1=isEMIPaidThisMonth()?0:(gi("emi1")||0),e2=gi("emi2")||0;
+  const incTot=bGet("inc_salary_a",0)+bGet("inc_bonus_a",0)+bGet("inc_interest_a",0)+bGet("inc_rental_a",0)+bGet("inc_custom_a",0);
+  const fnAct=bGet("fn_wifi_a",0)+bGet("fn_maint_a",0)+bGet("fn_elec_a",0)+bGet("fn_mobile_a",0)+bGet("fn_custom_a",0);
+  const vnAct=bGet("vn_grocery_a",0)+bGet("vn_health_a",0)+bGet("vn_transport_a",0)+bGet("vn_home_a",0)+bGet("vn_custom_a",0);
+  const wTotal=bGet("w_food_a",0)+bGet("w_dining_a",0)+bGet("w_shopping_a",0)+bGet("w_subs_a",0)+bGet("w_travel_a",0)+bGet("w_transfer_a",0)+bGet("w_entertain_a",0)+bGet("w_custom_a",0);
+  const ccBills=CARDS.reduce((s,c)=>s+getBill(c.id),0),debtAct=ccBills+e1+e2;
+  const savAct=bGet("sav_mf_a",0)+bGet("sav_stocks_a",0)+bGet("sav_fd_a",0)+bGet("sav_custom_a",0);
+  const needsTot=fnAct+vnAct,surplus=incTot-(needsTot+wTotal+debtAct+savAct);
+  const dLeft=new Date(new Date().getFullYear(),new Date().getMonth()+1,0).getDate()-new Date().getDate();
+  const tiles={"bsum-income":{v:incTot,col:"var(--mint)"},"bsum-needs":{v:needsTot,col:"var(--blue)"},"bsum-wants":{v:wTotal,col:"var(--amber)"},"bsum-debt":{v:debtAct,col:"var(--red)"},"bsum-savings":{v:savAct,col:"var(--pur)"},"bsum-surplus":{v:surplus,col:surplus>=0?"var(--mint)":"var(--red)"}};
+  Object.entries(tiles).forEach(([id,{v,col}])=>{ const el=document.getElementById(id); if(el){el.textContent=(v<0?"-":"")+fmt(Math.abs(v));el.style.color=col;} });
+  if(incTot>0){
+    [["b5030-needs",Math.round((needsTot/incTot)*100),"var(--blue)"],["b5030-wants",Math.round((wTotal/incTot)*100),"var(--amber)"],["b5030-sav",Math.round((savAct/incTot)*100),"var(--pur)"],["b5030-debt",Math.round((debtAct/incTot)*100),"var(--red)"]].forEach(([id,pct,col])=>{
+      const f=document.getElementById(id),l=document.getElementById(id+"-lbl");
+      if(f){f.style.width=Math.min(100,pct)+"%";f.style.background=col;}
+      if(l)l.textContent=pct+"%";
+    });
+  }
+  const surpEl=document.getElementById("bsum-surplus-row");
+  if(surpEl){
+    surpEl.className="insight "+(surplus>=0?surplus>3000?'ok':'warn':'bad');
+    surpEl.innerHTML=surplus<0?`<strong>Overspending by ${fmt(Math.abs(surplus))}</strong> — Review your Wants and Debt sections.`:surplus<3000?`<strong>Tight month</strong> — ${fmt(surplus)} surplus. ${dLeft} days left.`:`<strong>On track!</strong> ${fmt(surplus)} surplus. ${dLeft} days left — consider moving ${fmt(Math.min(surplus,2000))} to savings.`;
+  }
+}
+
+function buildBudget(){
+  const e1=isEMIPaidThisMonth()?0:(gi("emi1")||0),e2=gi("emi2")||0;
+  const today=new Date(),daysIn=new Date(today.getFullYear(),today.getMonth()+1,0).getDate(),dayN=today.getDate(),dLeft=daysIn-dayN;
+  const totalMonth=today.toLocaleDateString("en-IN",{month:"long",year:"numeric"});
+  const totalIncAct=bGet("inc_salary_a",0)+bGet("inc_bonus_a",0)+bGet("inc_interest_a",0)+bGet("inc_rental_a",0)+bGet("inc_custom_a",0);
+  const fnAct=bGet("fn_wifi_a",0)+bGet("fn_maint_a",0)+bGet("fn_elec_a",0)+bGet("fn_mobile_a",0)+bGet("fn_custom_a",0);
+  const vnAct=bGet("vn_grocery_a",0)+bGet("vn_health_a",0)+bGet("vn_transport_a",0)+bGet("vn_home_a",0)+bGet("vn_custom_a",0);
+  const wTotal=bGet("w_food_a",0)+bGet("w_dining_a",0)+bGet("w_shopping_a",0)+bGet("w_subs_a",0)+bGet("w_travel_a",0)+bGet("w_transfer_a",0)+bGet("w_entertain_a",0)+bGet("w_custom_a",0);
+  const ccBills=CARDS.reduce((s,c)=>s+getBill(c.id),0),debtAct=ccBills+e1+e2;
+  const savAct=bGet("sav_mf_a",0)+bGet("sav_stocks_a",0)+bGet("sav_fd_a",0)+bGet("sav_custom_a",0);
+  const needsTot=fnAct+vnAct,surplus=totalIncAct-(needsTot+wTotal+debtAct+savAct);
+  const goalVal=bGet("month_goal_txt","");
+  const wantCats=[{n:"Food Delivery",col:"#f04444",k:"w_food",def:0},{n:"Shopping",col:"#4f8aff",k:"w_shopping",def:0},{n:"Transfers",col:"#f59e0b",k:"w_transfer",def:0},{n:"Subscriptions",col:"#e8b84b",k:"w_subs",def:0},{n:"Travel",col:"#06b6d4",k:"w_travel",def:0},{n:"Dining Out",col:"#8b5cf6",k:"w_dining",def:0},{n:"Entertainment",col:"#00c896",k:"w_entertain",def:0}];
+  const donutSlices=wantCats.filter(c=>bGet(c.k+"_a",c.def)>0).map(c=>({v:bGet(c.k+"_a",c.def),col:c.col}));
+  const pN=totalIncAct>0?Math.round((needsTot/totalIncAct)*100):0,pW=totalIncAct>0?Math.round((wTotal/totalIncAct)*100):0,pS=totalIncAct>0?Math.round((savAct/totalIncAct)*100):0,pD=totalIncAct>0?Math.round((debtAct/totalIncAct)*100):0;
+  const irow=(lbl,ke,ea,ae,aa)=>`<div class="bcat"><div class="bcat-top"><div class="bcat-name">${lbl}</div><div class="bcat-right" style="gap:6px">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:.56rem;color:var(--t3)">Expected</span>
+    <input type="number" id="${ke}" value="${ea}" style="width:78px;padding:3px 7px;font-size:.68rem;border-radius:7px;background:var(--s3);border:1px solid var(--brd);color:var(--txt);font-family:'JetBrains Mono',monospace;outline:none" onfocus="this.style.borderColor='rgba(232,184,75,.4)'" onblur="this.style.borderColor='var(--brd)';bBlur('${ke}')">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:.56rem;color:var(--t3)">Actual</span>
+    <input type="number" id="${ae}" value="${aa}" style="width:78px;padding:3px 7px;font-size:.68rem;border-radius:7px;background:var(--s3);border:1px solid var(--brd);color:var(--mint);font-family:'JetBrains Mono',monospace;outline:none" onfocus="this.style.borderColor='rgba(232,184,75,.4)'" onblur="this.style.borderColor='var(--brd)';bBlur('${ae}')">
+  </div></div></div>`;
+
+  sh("budget-wrap",`
+    <div class="card" style="margin-bottom:12px"><div class="chead"><div class="cicon">🎯</div><div class="ctitle">Monthly Goal</div><span class="cbadge">${totalMonth}</span></div>
+    <div class="cbody"><input type="text" id="month_goal_inp" value="${goalVal}" placeholder="e.g. Plan savings or invest in a fund..." style="background:var(--s2);border:1px solid var(--brd);border-radius:9px;padding:8px 11px;color:var(--txt);font-family:'Plus Jakarta Sans',sans-serif;font-size:.78rem;width:100%;outline:none" onfocus="this.style.borderColor='rgba(232,184,75,.5)'" onblur="this.style.borderColor='var(--brd)';(()=>{const s=bLoad();s.month_goal_txt=this.value;bSave(s)})()">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:.5rem;color:var(--t3);margin-top:5px">Day ${dayN} of ${daysIn} · ${dLeft} days remaining</div></div></div>
+
+    <div class="hero" style="margin-bottom:12px"><div class="hero-label">Monthly Snapshot — ${totalMonth}</div>
+    <div class="hero-row" style="align-items:center"><div><div class="hero-amount ${surplus>=0?'pos':'neg'}" id="bsum-surplus">${surplus>=0?'+':''}${fmt(Math.abs(surplus))}</div><div class="hero-sub">${surplus>=0?"Surplus this month — great!":"Spending more than income"}</div></div>
+    ${surplus<0?`<span class="pill bad"><span class="dot"></span>Over Budget</span>`:surplus<3000?`<span class="pill warn"><span class="dot"></span>Tight Margin</span>`:`<span class="pill safe"><span class="dot"></span>On Track</span>`}</div>
+    <div class="hero-meta">
+      <div class="hm"><div class="hm-l">Income</div><div class="hm-v" style="color:var(--mint)" id="bsum-income">${fmt(totalIncAct)}</div></div>
+      <div class="hm"><div class="hm-l">Needs</div><div class="hm-v" style="color:var(--blue)" id="bsum-needs">${fmt(needsTot)}</div></div>
+      <div class="hm"><div class="hm-l">Wants</div><div class="hm-v" style="color:var(--amber)" id="bsum-wants">${fmt(wTotal)}</div></div>
+      <div class="hm"><div class="hm-l">Debt</div><div class="hm-v" style="color:var(--red)" id="bsum-debt">${fmt(debtAct)}</div></div>
+      <div class="hm"><div class="hm-l">Savings</div><div class="hm-v" style="color:var(--pur)" id="bsum-savings">${fmt(savAct)}</div></div>
+    </div></div>
+
+    <div class="card" style="margin-bottom:12px"><div class="chead" style="border-bottom:none;padding-bottom:4px"><div class="cicon">💰</div><div class="ctitle">Income</div><span class="cbadge" style="color:var(--mint)">${fmt(totalIncAct)} actual</span></div>
+    <div style="height:2px;background:linear-gradient(90deg,var(--mint),transparent);margin:0 17px 10px;border-radius:2px"></div>
+    <div class="cbody" style="padding-top:4px">
+      ${irow("💵 Salary","inc_salary_e",bGet("inc_salary_e",0),"inc_salary_a",bGet("inc_salary_a",0))}
+      ${irow("🎁 Bonus / Freelance","inc_bonus_e",bGet("inc_bonus_e",0),"inc_bonus_a",bGet("inc_bonus_a",0))}
+      ${irow("📈 Interest / Dividends","inc_interest_e",bGet("inc_interest_e",0),"inc_interest_a",bGet("inc_interest_a",0))}
+      ${irow("🏠 Rental Income","inc_rental_e",bGet("inc_rental_e",0),"inc_rental_a",bGet("inc_rental_a",0))}
+      ${irow("➕ Other Income","inc_custom_e",bGet("inc_custom_e",0),"inc_custom_a",bGet("inc_custom_a",0))}
+    </div></div>
+
+    <div class="card" style="margin-bottom:12px"><div class="chead" style="border-bottom:none;padding-bottom:4px"><div class="cicon">🔒</div><div class="ctitle">Fixed Needs</div><span class="cbadge" style="color:var(--blue)">${fmt(fnAct)} actual</span></div>
+    <div style="height:2px;background:linear-gradient(90deg,var(--blue),transparent);margin:0 17px 10px;border-radius:2px"></div>
+    <div class="cbody" style="padding-top:4px">
+      ${brow("📡 WiFi / Internet","fn_wifi",0,0,"var(--blue)")}
+      ${brow("🏢 Society / Maintenance","fn_maint",0,0,"var(--blue)")}
+      ${brow("⚡ Electricity & Water","fn_elec",0,0,"var(--blue)")}
+      ${brow("📱 Mobile Recharge","fn_mobile",300,0,"var(--blue)")}
+      ${brow("➕ Other Fixed","fn_custom",0,0,"var(--blue)")}
+      <div class="frow total" style="margin-top:6px"><div class="frow-n">Total Fixed Needs</div><div class="frow-a" style="color:var(--blue)">${fmt(fnAct)}</div></div>
+    </div></div>
+
+    <div class="card" style="margin-bottom:12px"><div class="chead" style="border-bottom:none;padding-bottom:4px"><div class="cicon">🛒</div><div class="ctitle">Variable Needs</div><span class="cbadge" style="color:var(--blue)">${fmt(vnAct)} actual</span></div>
+    <div style="height:2px;background:linear-gradient(90deg,var(--blue),transparent);margin:0 17px 10px;border-radius:2px"></div>
+    <div class="cbody" style="padding-top:4px">
+      ${brow("🛒 Groceries","vn_grocery",0,0,"var(--blue)")}
+      ${brow("🏥 Health / Medical","vn_health",0,0,"var(--blue)")}
+      ${brow("⛽ Fuel / Transport","vn_transport",0,0,"var(--blue)")}
+      ${brow("🏠 Home & Household","vn_home",0,0,"var(--blue)")}
+      ${brow("➕ Other Variable","vn_custom",0,0,"var(--blue)")}
+      <div class="frow total" style="margin-top:6px"><div class="frow-n">Total Needs (Fixed + Variable)</div><div class="frow-a" style="color:var(--blue)">${fmt(needsTot)}</div></div>
+    </div></div>
+
+    <div class="card" style="margin-bottom:12px"><div class="chead" style="border-bottom:none;padding-bottom:4px"><div class="cicon">🎮</div><div class="ctitle">Wants (Non-essential)</div><span class="cbadge" style="color:var(--amber)">${fmt(wTotal)} actual</span></div>
+    <div style="height:2px;background:linear-gradient(90deg,var(--amber),transparent);margin:0 17px 10px;border-radius:2px"></div>
+    <div class="cbody" style="padding-top:4px">
+      <div class="donut-wrap" style="margin-bottom:10px">
+        ${donutSlices.length?donutHTML(donutSlices,128):''}
+        <div class="donut-legend">${wantCats.filter(c=>bGet(c.k+"_a",c.def)>0).map(c=>`<div class="dl-row"><div class="dl-dot" style="background:${c.col}"></div><div class="dl-name">${c.n}</div><div class="dl-amt">${fmt(bGet(c.k+"_a",c.def))}</div><div class="dl-pct">${wTotal>0?((bGet(c.k+"_a",c.def)/wTotal)*100).toFixed(0):"0"}%</div></div>`).join('')}</div>
+      </div>
+      <div style="border-top:1px solid var(--brd);padding-top:10px">
+        ${brow("🍔 Food Delivery","w_food",0,0,"var(--amber)")}
+        ${brow("🍽️ Dining Out","w_dining",0,0,"var(--amber)")}
+        ${brow("🛍️ Shopping","w_shopping",0,0,"var(--amber)")}
+        ${brow("📱 Subscriptions","w_subs",0,0,"var(--amber)")}
+        ${brow("✈️ Travel","w_travel",0,0,"var(--amber)")}
+        ${brow("↗️ Money Transfers","w_transfer",0,0,"var(--amber)")}
+        ${brow("🎬 Entertainment","w_entertain",0,0,"var(--amber)")}
+        ${brow("➕ Other Wants","w_custom",0,0,"var(--amber)")}
+      </div>
+      <div class="frow total" style="margin-top:6px"><div class="frow-n">Total Wants</div><div class="frow-a" style="color:var(--amber)">${fmt(wTotal)}</div></div>
+    </div></div>
+
+    <div class="card" style="margin-bottom:12px"><div class="chead" style="border-bottom:none;padding-bottom:4px"><div class="cicon">💳</div><div class="ctitle">Debt Payments</div><span class="cbadge" style="color:var(--red)">Auto from Cards tab</span></div>
+    <div style="height:2px;background:linear-gradient(90deg,var(--red),transparent);margin:0 17px 10px;border-radius:2px"></div>
+    <div class="cbody" style="padding-top:4px">
+      ${CARDS.filter(c=>getBill(c.id)>0).map(c=>bDebtRow(`${c.name} · Due ${c.dueDate?c.dueDate+"th":"—"}`,getBill(c.id),"var(--red)")).join('')}
+      ${bDebtRow(`Loan EMI · ${isEMIPaidThisMonth()?'Paid ✓':'Pending'}`,e1,isEMIPaidThisMonth()?'var(--mint)':'var(--blue)')}
+      ${e2>0?bDebtRow("Other EMI / Commitment",e2,"var(--blue)"):""}
+      <div class="frow total" style="margin-top:6px"><div class="frow-n">Total Debt</div><div class="frow-a" style="color:var(--red)">${fmt(debtAct)}</div></div>
+    </div></div>
+
+    <div class="card" style="margin-bottom:12px"><div class="chead" style="border-bottom:none;padding-bottom:4px"><div class="cicon">📈</div><div class="ctitle">Savings & Investments</div><span class="cbadge" style="color:var(--pur)">${fmt(savAct)} this month</span></div>
+    <div style="height:2px;background:linear-gradient(90deg,var(--pur),transparent);margin:0 17px 10px;border-radius:2px"></div>
+    <div class="cbody" style="padding-top:4px">
+      ${brow("📦 Mutual Fund SIP","sav_mf",0,0,"var(--pur)")}
+      ${brow("📈 Stocks","sav_stocks",0,0,"var(--pur)")}
+      ${brow("🏦 FD / RD","sav_fd",0,0,"var(--pur)")}
+      ${brow("➕ Other Savings","sav_custom",0,0,"var(--pur)")}
+      <div class="frow total" style="margin-top:6px"><div class="frow-n">Total Saved</div><div class="frow-a" style="color:var(--pur)">${fmt(savAct)}</div></div>
+    </div></div>
+
+    <div class="card"><div class="chead"><div class="cicon">📊</div><div class="ctitle">Month Summary & 50/30/20 Rule</div></div><div class="cbody">
+      <div class="g2" style="margin-bottom:14px">
+        <div>
+          <div class="frow"><div class="frow-n">Total Income</div><div class="frow-a" style="color:var(--mint)">${fmt(totalIncAct)}</div></div>
+          <div class="frow"><div class="frow-n">Needs</div><div class="frow-a" style="color:var(--blue)">−${fmt(needsTot)}</div></div>
+          <div class="frow"><div class="frow-n">Wants</div><div class="frow-a" style="color:var(--amber)">−${fmt(wTotal)}</div></div>
+          <div class="frow"><div class="frow-n">Debt</div><div class="frow-a" style="color:var(--red)">−${fmt(debtAct)}</div></div>
+          <div class="frow"><div class="frow-n">Savings</div><div class="frow-a" style="color:var(--pur)">−${fmt(savAct)}</div></div>
+          <div class="frow total"><div class="frow-n">Net ${surplus>=0?"Surplus":"Deficit"}</div><div class="frow-a" style="color:${surplus>=0?'var(--mint)':'var(--red)'}">${surplus>=0?'+':''}${fmt(Math.abs(surplus))}</div></div>
+        </div>
+        <div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:10px">50/30/20 vs Your Split</div>
+          ${[["Needs (50% ideal)","b5030-needs",pN,"var(--blue)"],["Wants (30% ideal)","b5030-wants",pW,"var(--amber)"],["Savings (20% ideal)","b5030-sav",pS,"var(--pur)"],["Debt (aim for 0%)","b5030-debt",pD,"var(--red)"]].map(([lbl,id,pct,col])=>`
+            <div style="margin-bottom:9px">
+              <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-family:'JetBrains Mono',monospace;font-size:.56rem;color:var(--t3)">${lbl}</span><span style="font-family:'JetBrains Mono',monospace;font-size:.63rem;font-weight:600;color:${col}" id="${id}-lbl">${pct}%</span></div>
+              <div style="height:5px;background:var(--s3);border-radius:10px;overflow:hidden"><div id="${id}" style="height:100%;border-radius:10px;width:${Math.min(100,pct)}%;background:${col};transition:width .8s"></div></div>
+            </div>`).join('')}
+        </div>
+      </div>
+      <div class="insight ${surplus>=0?surplus>3000?'ok':'warn':'bad'}" id="bsum-surplus-row">
+        ${surplus<0?`<strong>Overspending by ${fmt(Math.abs(surplus))}</strong> — review your Wants and Debt.`:surplus<3000?`<strong>Tight month</strong> — ${fmt(surplus)} surplus. ${dLeft} days left.`:`<strong>On track!</strong> ${fmt(surplus)} surplus. ${dLeft} days left.`}
+      </div>
+    </div></div>
+  `);
+}
+
+// ═══════════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════════
+function buildDash(){
+  const bal=gi("balance")||0,e2=gi("emi2")||0;
+  const emiRaw=gi("emi1")||LOAN_CONFIG.emi,e1=isEMIPaidThisMonth()?0:emiRaw;
+  const bills=CARDS.reduce((s,c)=>s+getBill(c.id),0),emis=e1+e2;
+  const outfl=bills+emis,rem=bal-outfl;
+  const totLim=CARDS.filter(c=>c.id!=="card2").reduce((s,c)=>s+getLim(c.id),0);
+  const util=totLim>0?((bills/totLim)*100):0;
+  const loanPaid=getLoanPaidCount(),loanRem=getLoanRemaining();
+  const recvPending=loadRecv().filter(r=>!r.received).reduce((s,r)=>s+r.amount,0);
+
+  const hAmt=document.getElementById("hero-amount");
+  if(hAmt){hAmt.className="hero-amount "+(rem<0?"neg":rem<5000?"":"pos");countUp(hAmt,rem);}
+  const hSub=document.getElementById("hero-sub");
+  if(hSub)hSub.textContent=rem<0?`₹${Math.abs(rem).toLocaleString("en-IN")} shortfall — collect receivables (₹${recvPending.toLocaleString("en-IN")})`:rem<5000?"Balance is low after dues — stay cautious":"All dues can be cleared with buffer remaining";
+  const hPill=document.getElementById("hero-pill");
+  if(hPill)hPill.innerHTML=rem<0?`<span class="pill bad"><span class="dot"></span>Shortfall</span>`:rem<5000?`<span class="pill warn"><span class="dot"></span>Low Buffer</span>`:`<span class="pill safe"><span class="dot"></span>Healthy</span>`;
+  const hMeta=document.getElementById("hero-meta");
+  if(hMeta)hMeta.innerHTML=`
+    <div class="hm"><div class="hm-l">Balance</div><div class="hm-v" style="color:var(--mint)">${fmt(bal)}</div></div>
+    <div class="hm"><div class="hm-l">CC Bills</div><div class="hm-v" style="color:var(--red)">${fmt(bills)}</div></div>
+    <div class="hm"><div class="hm-l">EMIs</div><div class="hm-v" style="color:var(--blue)">${fmt(emis)}</div></div>
+    <div class="hm"><div class="hm-l">CC Utilization</div><div class="hm-v" style="color:var(--gold)">${util.toFixed(1)}%</div></div>
+    <div class="hm"><div class="hm-l">Receivables</div><div class="hm-v" style="color:var(--pur)">${fmt(recvPending)}</div></div>`;
+
+  sh("dash-stats",`
+    <div class="sc"><div class="sc-accent" style="background:var(--mint)"></div><div class="sc-lbl">Bank Balance</div><div class="sc-val g">${fmt(bal)}</div></div>
+    <div class="sc"><div class="sc-accent" style="background:var(--red)"></div><div class="sc-lbl">CC Bills Due</div><div class="sc-val r">${fmt(bills)}</div><div class="sc-sub">${CARDS.filter(c=>getBill(c.id)>0).length} cards active</div></div>
+    <div class="sc" onclick="go('dash');setTimeout(()=>document.getElementById('loan-card')?.scrollIntoView({behavior:'smooth'}),100)" style="cursor:pointer"><div class="sc-accent" style="background:${isEMIPaidThisMonth()?'var(--mint)':'var(--blue)'}"></div><div class="sc-lbl">Loan EMI</div><div class="sc-val ${isEMIPaidThisMonth()?'g':'b'}">${isEMIPaidThisMonth()?'Paid ✓':fmt(emiRaw)}</div><div class="sc-sub">${loanPaid}/${LOAN_CONFIG.totalEMIs} paid · ${fmt(loanRem)} left</div></div>
+    <div class="sc"><div class="sc-accent" style="background:var(--gold)"></div><div class="sc-lbl">Total Outflow</div><div class="sc-val go">${fmt(outfl)}</div></div>
+    <div class="sc"><div class="sc-accent" style="background:var(--pur)"></div><div class="sc-lbl">CC Utilization</div><div class="sc-val p">${util.toFixed(1)}%</div><div class="sc-sub">of ${fmt(totLim)} limit</div></div>
+    <div class="sc"><div class="sc-accent" style="background:var(--amber)"></div><div class="sc-lbl">Incoming</div><div class="sc-val w">${fmt(recvPending)}</div><div class="sc-sub">${loadRecv().filter(r=>!r.received).map(r=>r.name).join(' · ')||'All received!'}</div></div>
+  `);
+
+  const active=CARDS.filter(c=>c.dueDate&&getRawBill(c.id)>0&&!isPaid(c.id)).map(c=>({...c,bill:getBill(c.id),days:daysTo(c.dueDate)})).sort((a,b)=>(a.days??99)-(b.days??99));
+  const todayFlat=new Date(); todayFlat.setHours(0,0,0,0);
+  const thisM7=new Date(todayFlat.getFullYear(),todayFlat.getMonth(),7),nextEMIDate=todayFlat<=thisM7?thisM7:new Date(todayFlat.getFullYear(),todayFlat.getMonth()+1,7);
+  const emiDays=Math.round((nextEMIDate-todayFlat)/86400000),emiPaidNow=isEMIPaidThisMonth();
+  const loanItem=emiPaidNow||LOAN_CONFIG.emi<=0?null:{name:"Loan EMI",bank:"Bank",col:"#4f8aff",bill:LOAN_CONFIG.emi,days:emiDays,isLoan:true};
+  const allDue=[...active,...(loanItem?[loanItem]:[])].sort((a,b)=>(a.days??99)-(b.days??99));
+  st("due-count-badge",allDue.length+" upcoming");st("nav-due-count",allDue.length>0?String(allDue.length):"");
+  sh("due-list",allDue.length?allDue.map(c=>`<div class="due-item"><div class="due-color" style="background:${c.col}"></div><div class="due-info"><div class="due-name">${c.name}</div><div class="due-meta">${c.bank} · ${c.days<0?"Overdue":c.days===0?"Due Today":c.days+" days away"}</div></div><div class="due-right">${dueBadge(c.days)}<div class="due-amt">${fmt(c.bill)}</div></div></div>`).join(''):`<div style="font-family:'JetBrains Mono',monospace;font-size:.63rem;color:var(--mint);text-align:center;padding:16px 0">✓ All payments cleared!</div>`);
+
+  const totalLim2=CARDS.filter(c=>c.id!=="card2").reduce((s,c)=>s+getLim(c.id),0);
+  const utilPct=totalLim2>0?(bills/totalLim2)*100:0;
+  const CIBIL=loadCIBIL(),cibilRingPct=CIBIL?Math.round(((CIBIL-300)/600)*100):0;
+  sh("credit-health",`<div style="display:flex;align-items:center;gap:26px;flex-wrap:wrap">
+    <div class="score-ring">${ringHTML(cibilRingPct,"#00c896",96,CIBIL?CIBIL.toString():"—")}
+      <div class="score-text"><div class="score-num" style="color:#00c896;cursor:pointer" onclick="editCIBIL()">${CIBIL||"Set"}</div><div class="score-lbl">Credit score (tap to edit)</div></div>
+    </div>
+    <div style="flex:1;min-width:200px">
+      <div style="font-size:.88rem;font-weight:700;margin-bottom:9px">${CIBIL?(CIBIL>=750?"Excellent":"Good")+" Credit Health "+(CIBIL>=750?"🟢":"🟡"):"Add a credit score to track it"}</div>
+      <div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-family:'JetBrains Mono',monospace;font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;color:var(--t3)">CC Utilization</span><span style="font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:600;color:${utilPct>30?"var(--amber)":"var(--mint)"}">${utilPct.toFixed(1)}%</span></div>
+        <div style="height:5px;background:var(--s3);border-radius:10px;overflow:hidden"><div style="height:100%;border-radius:10px;width:${Math.min(100,utilPct)}%;background:${utilPct>50?"var(--red)":utilPct>30?"var(--amber)":"var(--mint)"};transition:width .8s"></div></div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.54rem;color:var(--t3);margin-top:3px">${utilPct<30?"✓ Under 30% — ideal for your score":"Keep below 30% to protect your score"}</div>
+      </div>
+      <div style="font-size:.72rem;color:var(--t2);line-height:1.6">7 cards · ${fmt(totalLim2)} total limit · ${CARDS.filter(c=>c.dueDate&&getBill(c.id)>0).length} with active bills</div>
+      <div style="margin-top:7px;display:flex;gap:6px;flex-wrap:wrap">
+        ${utilPct<30?'<span class="chip gn">UTIL OK ✓</span>':'<span class="chip am">UTIL HIGH</span>'}
+        ${CIBIL?`<span class="chip go">${CIBIL} score ✓</span>`:""}
+        ${CARDS.find(c=>c.id==="card5"&&getBill(c.id)>0&&getBill(c.id)/getLim(c.id)>0.5)?'<span class="chip rd">HIGH UTILIZATION</span>':''}
+      </div>
+    </div>
+  </div>`);
+}
+
+function runAnalysis(){
+  buildDash();
+  const bal=gi("balance")||0,e2=gi("emi2")||0;
+  const emiRaw=gi("emi1")||LOAN_CONFIG.emi,e1=isEMIPaidThisMonth()?0:emiRaw;
+  let bills=0,rows="";
+  CARDS.forEach(c=>{
+    const b=getBill(c.id),l=getLim(c.id),raw=getRawBill(c.id)||c.bill||0;
+    const paidC=isPaid(c.id),p=l>0?((raw/l)*100).toFixed(1)+"%":"—";
+    bills+=b;
+    if(raw>0)rows+=`<tr style="${paidC?'opacity:.5':''}"><td><div style="font-weight:600;font-size:.76rem">${c.name}${paidC?' <span style="color:var(--mint);font-size:.58rem">✓ Paid</span>':''}</div><div style="font-size:.58rem;color:var(--t3)">${c.bank}</div></td><td>${paidC?`<span class="dc ok">Paid ✓</span>`:dueBadge(daysTo(c.dueDate))}</td><td style="color:${raw/l>.75?'var(--red)':raw/l>.5?'var(--amber)':'var(--t2)'}">${p}</td><td>${paidC?`<span style="text-decoration:line-through">${fmtD(raw)}</span>`:fmtD(raw)}</td></tr>`;
+  });
+  if(emiRaw){
+    const nowB=new Date(); nowB.setHours(0,0,0,0);
+    const m7=new Date(nowB.getFullYear(),nowB.getMonth(),7),nextE=nowB<=m7?m7:new Date(nowB.getFullYear(),nowB.getMonth()+1,7);
+    const dE=Math.round((nextE-nowB)/86400000),emiPaidNow=isEMIPaidThisMonth();
+    rows+=`<tr><td><div style="font-weight:600;font-size:.76rem">Loan EMI</div><div style="font-size:.58rem;color:var(--t3)">${LOAN_CONFIG.totalEMIs-getLoanPaidCount()} EMIs left · ${fmt(getLoanRemaining())} outstanding</div></td><td>${emiPaidNow?`<span class="dc ok">Paid ✓</span>`:dueBadge(dE)}</td><td><span style="font-family:'JetBrains Mono',monospace;font-size:.66rem;color:var(--blue)">${getLoanPaidCount()}/${LOAN_CONFIG.totalEMIs} paid</span></td><td style="color:${emiPaidNow?'var(--mint)':'var(--txt)'}">${emiPaidNow?`<span style="text-decoration:line-through;opacity:.5">${fmt(emiRaw)}</span>`:fmt(emiRaw)}</td></tr>`;
+  }
+  if(e2)rows+=`<tr><td style="color:var(--t2)">Other EMI</td><td>—</td><td>—</td><td>${fmt(e2)}</td></tr>`;
+  const out=bills+e1+e2,rem=bal-out,rc=rem<0?"var(--red)":rem<5000?"var(--amber)":"var(--mint)";
+  const recvAmt=loadRecv().filter(r=>!r.received).reduce((s,r)=>s+r.amount,0);
+  rows+=`<tr class="tt"><td colspan="3">Total Outflow</td><td>${fmt(out)}</td></tr><tr class="tt"><td colspan="3">Net Remaining</td><td style="color:${rc};font-size:.86rem">${fmt(rem)}</td></tr>${rem<0?`<tr class="tt"><td colspan="3" style="color:var(--t2)">After collecting receivables (${fmt(recvAmt)})</td><td style="color:${rem+recvAmt>=0?'var(--mint)':'var(--red)'}">${fmt(rem+recvAmt)}</td></tr>`:''}`;
+  sh("btbl",`<thead><tr><th>Item</th><th>Due</th><th>Util</th><th>Amount</th></tr></thead><tbody>${rows}</tbody>`);
+  const r=document.getElementById("results"); r.classList.add("on");
+  setTimeout(()=>r.scrollIntoView({behavior:"smooth",block:"start"}),100);
+  const now=new Date(); localStorage.setItem(LAST_AN,now.toISOString());
+  st("last-analysis-ts","Last run: "+now.toLocaleTimeString("en-IN",{hour:'2-digit',minute:'2-digit'}));
+}
+
+// ═══════════════════════════════════════════════
+//  TRACKER
+// ═══════════════════════════════════════════════
+function loadHistory(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY))||[]; }catch(e){ return []; } }
+function saveHistory(d){ localStorage.setItem(STORE_KEY,JSON.stringify(d)); }
+
+function buildTracker(){
+  const now=new Date(),curYear=now.getFullYear(),curMonth=now.getMonth();
+  const sel=document.getElementById("tracker-month-select");
+  if(sel){
+    const history=loadHistory(),savedKeys=new Set(history.map(h=>h.key));
+    sel.innerHTML="";
+    for(let m=0;m<=Math.min(curMonth+1,11);m++){
+      const key=`${curYear}-${String(m+1).padStart(2,"0")}`,isPast=m<curMonth,isCur=m===curMonth;
+      const opt=document.createElement("option");
+      opt.value=key; opt.textContent=MNAMES[m]+" "+curYear+(savedKeys.has(key)?" ✓":"")+(isCur?" (current)":isPast?" (prior)":"");
+      if(isCur)opt.selected=true; sel.appendChild(opt);
+    }
+  }
+  const selectedKey=sel?sel.value:`${curYear}-${String(curMonth+1).padStart(2,"0")}`;
+  loadTrackerForm(selectedKey); renderHistory(); setTimeout(renderCharts,80);
+}
+
+function loadTrackerMonth(key){ loadTrackerForm(key); }
+
+function loadTrackerForm(monthKey){
+  const history=loadHistory(),existing=history.find(h=>h.key===monthKey)||{};
+  const [yr,mo]=monthKey.split("-").map(Number);
+  const monthStr=new Date(yr,mo-1,1).toLocaleDateString("en-IN",{month:"long",year:"numeric"});
+  const isPrior=new Date(yr,mo-1,1)<new Date(new Date().getFullYear(),new Date().getMonth(),1);
+  st("log-month-badge",existing.savedAt?"✓ Saved":isPrior?"Prior month":"Current month");
+  const port=loadPort();
+  const allInv=[...port.stocks,...port.mf];
+
+  sh("log-form-body",`
+    ${isPrior?`<div style="background:rgba(232,184,75,.08);border:1px solid rgba(232,184,75,.2);border-radius:9px;padding:9px 13px;margin-bottom:13px;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--gold)">📅 Logging prior month — <strong>${monthStr}</strong></div>`:""}
+    <div style="font-family:'JetBrains Mono',monospace;font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:10px">Bank & EMI</div>
+    <div class="g3" style="margin-bottom:16px">
+      <div class="field"><label>Bank Balance (₹)</label><input type="number" id="log_balance" value="${existing.balance||''}" placeholder="0.00"></div>
+      <div class="field"><label>Loan EMI (₹)</label><input type="number" id="log_emi1" value="${existing.emi1||0}" placeholder="0"></div>
+      <div class="field"><label>Other EMI</label><input type="number" id="log_emi2" value="${existing.emi2||''}" placeholder="0"></div>
+    </div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:10px">Credit Card Bills</div>
+    <div class="g3" style="margin-bottom:16px">${CARDS.map(c=>`<div class="field"><label>${c.name}</label><input type="number" id="log_${c.id}" value="${existing["bill_"+c.id]||''}" placeholder="0.00"></div>`).join('')}</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:10px">Spending Categories</div>
+    <div class="g3" style="margin-bottom:16px">${CATS.map(cat=>`<div class="field"><label>${cat.icon} ${cat.name}</label><input type="number" id="log_cat_${cat.id}" value="${existing["cat_"+cat.id]||''}" placeholder="0"></div>`).join('')}</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:10px">Portfolio (Current Value)</div>
+    <div class="g3" style="margin-bottom:18px">${allInv.map(s=>`<div class="field"><label>${s.name}</label><input type="number" id="log_inv_${s.id}" value="${existing["inv_"+s.id]||''}" placeholder="0"></div>`).join('')}</div>
+    <button class="btn-primary" onclick="saveMonth('${monthKey}')">💾 Save — ${monthStr}</button>
+  `);
+}
+
+function saveMonth(key){
+  const history=loadHistory(),idx=history.findIndex(h=>h.key===key);
+  const entry={key,savedAt:new Date().toISOString()};
+  const dt=new Date(key+"-01"); entry.monthLabel=dt.toLocaleDateString("en-IN",{month:"short",year:"numeric"});
+  entry.balance=Number(document.getElementById("log_balance")?.value)||0;
+  entry.emi1=Number(document.getElementById("log_emi1")?.value)||0;
+  entry.emi2=Number(document.getElementById("log_emi2")?.value)||0;
+  let totalBills=0; CARDS.forEach(c=>{const v=Number(document.getElementById("log_"+c.id)?.value)||0;entry["bill_"+c.id]=v;totalBills+=v;}); entry.totalBills=totalBills;
+  let totalSpend=0; CATS.forEach(c=>{const v=Number(document.getElementById("log_cat_"+c.id)?.value)||0;entry["cat_"+c.id]=v;totalSpend+=v;}); entry.totalSpend=totalSpend;
+  const port=loadPort(),allInv=[...port.stocks,...port.mf];
+  allInv.forEach(s=>{ entry["inv_"+s.id]=Number(document.getElementById("log_inv_"+s.id)?.value)||0; });
+  entry.totalEMI=entry.emi1+entry.emi2; entry.totalOutflow=entry.totalBills+entry.totalEMI; entry.netPosition=entry.balance-entry.totalOutflow;
+  if(idx>=0)history[idx]=entry; else history.push(entry);
+  history.sort((a,b)=>a.key.localeCompare(b.key)); saveHistory(history);
+  showToast("Saved "+entry.monthLabel);
+  const sel=document.getElementById("tracker-month-select"),curVal=sel?sel.value:null;
+  const h2=loadHistory(),sk2=new Set(h2.map(h=>h.key)),now2=new Date();
+  if(sel){ Array.from(sel.options).forEach(opt=>{ const [yr2,mo2]=opt.value.split("-").map(Number); const base=MNAMES[mo2-1]+" "+yr2; const isPast2=new Date(yr2,mo2-1,1)<new Date(now2.getFullYear(),now2.getMonth(),1); const isCur2=yr2===now2.getFullYear()&&mo2-1===now2.getMonth(); opt.textContent=base+(sk2.has(opt.value)?" ✓":"")+(isCur2?" (current)":isPast2?" (prior)":""); }); if(curVal)sel.value=curVal; }
+  st("log-month-badge","✓ Saved"); renderHistory(); setTimeout(renderCharts,80);
+}
+
+function clearHistory(){ if(!confirm("Clear all monthly history? Cannot be undone."))return; localStorage.removeItem(STORE_KEY); showToast("History cleared"); renderHistory(); renderCharts(); }
+function deleteMonth(key){ let h=loadHistory(); h=h.filter(x=>x.key!==key); saveHistory(h); showToast("Deleted"); renderHistory(); setTimeout(renderCharts,80); }
+
+function renderHistory(){
+  const history=loadHistory(); st("history-count",history.length+" month"+(history.length!==1?"s":""));
+  if(!history.length){sh("history-table-wrap",`<div style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:.63rem;color:var(--t3);padding:20px 0">No history yet — log your first month above</div>`);return;}
+  const rows=[...history].reverse().map(h=>`<tr><td style="font-weight:600">${h.monthLabel}</td><td style="color:var(--mint)">${fmt(h.balance)}</td><td style="color:var(--red)">${fmt(h.totalBills)}</td><td style="color:var(--amber)">${fmt(h.totalEMI)}</td><td style="color:var(--blue)">${fmt(h.totalSpend)}</td><td><span style="color:${(h.netPosition||0)>=0?'var(--mint)':'var(--red)'};font-weight:600">${(h.netPosition||0)>=0?'+':''}${fmt(h.netPosition||0)}</span></td><td><button onclick="deleteMonth('${h.key}')" style="font-size:.53rem;padding:2px 7px;background:rgba(240,68,68,.1);color:var(--red);border:1px solid rgba(240,68,68,.2);border-radius:5px;cursor:pointer">Del</button></td></tr>`).join('');
+  sh("history-table-wrap",`<div style="overflow-x:auto"><table class="dtbl" style="min-width:560px"><thead><tr><th>Month</th><th>Balance</th><th>CC Bills</th><th>EMI</th><th>Spend</th><th>Net</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`);
+}
+
+// CHARTS
+function renderCharts(){
+  const history=loadHistory();
+  if(history.length<1){ ["chart-net","chart-bills","chart-bal"].forEach(id=>{ const c=document.getElementById(id); if(c){const ctx=c.getContext("2d");ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle="#3d5068";ctx.font="12px 'JetBrains Mono'";ctx.textAlign="center";ctx.fillText("Log at least 1 month to see charts",c.offsetWidth/2||300,80);} }); return; }
+  drawLineChart("chart-net",history,h=>h.netPosition||0,h=>(h.netPosition||0)>=0?"#00c896":"#f04444",true);
+  drawLineChart("chart-bills",history,h=>h.totalBills||0,()=>"#f04444",false);
+  drawBarChart("chart-bal",history);
+}
+function setupCanvas(id){ const c=document.getElementById(id);if(!c)return null; const dpr=window.devicePixelRatio||1,parent=c.parentElement,w=Math.max(280,(parent?parent.offsetWidth-32:600)),h=200; c.width=w*dpr;c.height=h*dpr;c.style.width=w+"px";c.style.height=h+"px"; const ctx=c.getContext("2d");ctx.scale(dpr,dpr);return{ctx,w,h}; }
+function drawLineChart(id,data,valFn,colFn,allowNeg){
+  const r=setupCanvas(id);if(!r)return; const{ctx,w,h}=r,PAD={t:20,r:20,b:40,l:60};
+  const vals=data.map(valFn),minV=allowNeg?Math.min(0,...vals):0,maxV=Math.max(...vals,1),range=maxV-minV||1;
+  const fx=i=>PAD.l+(i/(Math.max(data.length-1,1)))*(w-PAD.l-PAD.r);
+  const fy=v=>PAD.t+(1-(v-minV)/range)*(h-PAD.t-PAD.b);
+  ctx.strokeStyle="rgba(31,43,62,0.8)";ctx.lineWidth=1;
+  [0,.25,.5,.75,1].forEach(t=>{ const y=PAD.t+t*(h-PAD.t-PAD.b);ctx.beginPath();ctx.moveTo(PAD.l,y);ctx.lineTo(w-PAD.r,y);ctx.stroke();ctx.fillStyle="#3d5068";ctx.font="10px 'JetBrains Mono'";ctx.textAlign="right";ctx.fillText(fmtShort(maxV-t*(maxV-minV)),PAD.l-6,y+3); });
+  if(allowNeg&&minV<0){ const yz=fy(0);ctx.strokeStyle="rgba(255,255,255,.08)";ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(PAD.l,yz);ctx.lineTo(w-PAD.r,yz);ctx.stroke();ctx.setLineDash([]); }
+  const baseCol=colFn(data[data.length-1]);
+  const grad=ctx.createLinearGradient(0,PAD.t,0,h-PAD.b);grad.addColorStop(0,hexA(baseCol,0.25));grad.addColorStop(1,hexA(baseCol,0.02));
+  if(data.length>1){ ctx.beginPath();data.forEach((d,i)=>{i===0?ctx.moveTo(fx(i),fy(valFn(d))):ctx.lineTo(fx(i),fy(valFn(d)));});ctx.lineTo(fx(data.length-1),h-PAD.b);ctx.lineTo(fx(0),h-PAD.b);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+    ctx.beginPath();ctx.strokeStyle=baseCol;ctx.lineWidth=2.5;ctx.lineJoin="round";data.forEach((d,i)=>{i===0?ctx.moveTo(fx(i),fy(valFn(d))):ctx.lineTo(fx(i),fy(valFn(d)));});ctx.stroke(); }
+  data.forEach((d,i)=>{ const x=fx(i),y=fy(valFn(d)),col=colFn(d);ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();ctx.fillStyle="#8896b0";ctx.font="9px 'JetBrains Mono'";ctx.textAlign="center";ctx.fillText(d.monthLabel,x,h-PAD.b+14);ctx.fillStyle=col;ctx.font="bold 9px 'JetBrains Mono'";ctx.fillText(fmtShort(valFn(d)),x,y-10); });
+}
+function drawBarChart(id,data){ const r=setupCanvas(id);if(!r)return; const{ctx,w,h}=r,PAD={t:20,r:20,b:40,l:60},maxV=Math.max(...data.map(d=>d.balance||0),1);
+  const fy=v=>PAD.t+(1-v/maxV)*(h-PAD.t-PAD.b),bw=Math.max(8,Math.min(40,(w-PAD.l-PAD.r)/data.length*0.35)),gap=(w-PAD.l-PAD.r)/Math.max(data.length,1);
+  ctx.strokeStyle="rgba(31,43,62,0.8)";ctx.lineWidth=1;[0,.5,1].forEach(t=>{ const y=PAD.t+t*(h-PAD.t-PAD.b);ctx.beginPath();ctx.moveTo(PAD.l,y);ctx.lineTo(w-PAD.r,y);ctx.stroke();ctx.fillStyle="#3d5068";ctx.font="10px 'JetBrains Mono'";ctx.textAlign="right";ctx.fillText(fmtShort(maxV*(1-t)),PAD.l-6,y+3); });
+  data.forEach((d,i)=>{ const cx=PAD.l+i*gap+gap/2;ctx.fillStyle="rgba(0,200,150,0.7)";const bh=Math.max(2,(d.balance||0)/maxV*(h-PAD.t-PAD.b));ctx.fillRect(cx-bw-2,fy(d.balance||0),bw,bh);ctx.fillStyle="rgba(240,68,68,0.6)";const oh=Math.max(2,(d.totalOutflow||0)/maxV*(h-PAD.t-PAD.b));ctx.fillRect(cx+2,fy(d.totalOutflow||0),bw,oh);ctx.fillStyle="#8896b0";ctx.font="9px 'JetBrains Mono'";ctx.textAlign="center";ctx.fillText(d.monthLabel,cx,h-PAD.b+14); });
+  ctx.fillStyle="rgba(0,200,150,0.7)";ctx.fillRect(PAD.l,6,10,8);ctx.fillStyle="#8896b0";ctx.font="9px 'JetBrains Mono'";ctx.textAlign="left";ctx.fillText("Balance",PAD.l+14,13);ctx.fillStyle="rgba(240,68,68,0.6)";ctx.fillRect(PAD.l+70,6,10,8);ctx.fillText("Outflow",PAD.l+84,13);
+}
+function fmtShort(n){ const abs=Math.abs(n),sign=n<0?"-":""; if(abs>=100000)return sign+"₹"+(abs/100000).toFixed(1)+"L"; if(abs>=1000)return sign+"₹"+(abs/1000).toFixed(0)+"k"; return sign+"₹"+Math.round(abs); }
+function hexA(hex,a){ const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return`rgba(${r},${g},${b},${a})`; }
+
+// ═══════════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════════
+function buildSettings(){
+  const keys=[LOAN_KEY,PAID_KEY,BV2_KEY,CIBIL_KEY,INSUR_KEY,RECV_KEY,STORE_KEY,PORT_KEY];
+  const labels=["Loan","Paid Cards","Budget","CIBIL","Insurance","Receivables","History","Portfolio"];
+  sh("settings-summary",`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px">${keys.map((k,i)=>{const v=localStorage.getItem(k);return`<div style="background:var(--s2);border:1px solid var(--brd);border-radius:10px;padding:10px 12px"><div style="font-family:'JetBrains Mono',monospace;font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:4px">${labels[i]}</div><div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:${v?'var(--mint)':'var(--t3)'}">${v?"✓ Stored ("+(v.length/1024).toFixed(1)+"KB)":"No data"}</div></div>`;}).join('')}</div>`);
+}
+
+function exportData(){
+  const data={loan:loadLoanState(),paid:loadPaid(),budget:bLoad(),cibil:loadCIBIL(),insur:loadInsur(),recv:loadRecv(),history:loadHistory(),port:loadPort(),exportedAt:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url; a.download="VAULT_backup_"+new Date().toISOString().slice(0,10)+".json"; a.click(); URL.revokeObjectURL(url); showToast("Data exported");
+}
+function importData(){ document.getElementById("import-file").click(); }
+function handleImport(event){
+  const file=event.target.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(data.loan)localStorage.setItem(LOAN_KEY,JSON.stringify(data.loan));
+      if(data.paid)localStorage.setItem(PAID_KEY,JSON.stringify(data.paid));
+      if(data.budget)localStorage.setItem(BV2_KEY,JSON.stringify(data.budget));
+      if(data.cibil)localStorage.setItem(CIBIL_KEY,JSON.stringify(data.cibil));
+      if(data.insur)localStorage.setItem(INSUR_KEY,JSON.stringify(data.insur));
+      if(data.recv)localStorage.setItem(RECV_KEY,JSON.stringify(data.recv));
+      if(data.history)localStorage.setItem(STORE_KEY,JSON.stringify(data.history));
+      if(data.port)localStorage.setItem(PORT_KEY,JSON.stringify(data.port));
+      buildAll(); showToast("Data imported successfully ✓");
+    }catch(err){ showToast("Import failed — invalid file"); }
+  };
+  reader.readAsText(file);
+}
+function resetAllData(){
+  if(!confirm("Reset ALL data permanently? This cannot be undone."))return;
+  [LOAN_KEY,PAID_KEY,BV2_KEY,CIBIL_KEY,INSUR_KEY,RECV_KEY,STORE_KEY,PORT_KEY,LAST_AN].forEach(k=>localStorage.removeItem(k));
+  showToast("All data reset"); setTimeout(()=>location.reload(),800);
+}
+
+// ═══════════════════════════════════════════════
+//  NAVIGATION & INIT
+// ═══════════════════════════════════════════════
+const PAGES=["dash","cards","portfolio","budget","tracker","settings"];
+function go(id){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("on"));
+  document.querySelectorAll(".nbtn,.mb").forEach(b=>b.classList.remove("on"));
+  document.getElementById("pg-"+id).classList.add("on");
+  const i=PAGES.indexOf(id);
+  if(document.querySelectorAll(".nbtn")[i]) document.querySelectorAll(".nbtn")[i].classList.add("on");
+  if(document.querySelectorAll(".mb")[i]) document.querySelectorAll(".mb")[i].classList.add("on");
+  if(id==="cards"){buildCCList();updatePool();}
+  if(id==="portfolio"){buildPortfolio();buildRecv();}
+  if(id==="budget")buildBudget();
+  if(id==="dash"){buildDash();}
+  if(id==="tracker")buildTracker();
+  if(id==="settings")buildSettings();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function refresh(){ buildDash(); buildLoanCard(); }
+
+function buildAll(){
+  buildCCList(); updatePool(); buildPortfolio(); buildRecv(); buildBudget(); buildDash(); buildLoanCard();
+}
+
+// Scroll-to-top
+window.addEventListener("scroll",()=>{
+  const btn=document.getElementById("scroll-top-btn");
+  if(!btn)return;
+  if(window.scrollY>350) btn.classList.add("visible"); else btn.classList.remove("visible");
+});
+
+// INIT
+const _now=new Date();
+const _el=document.getElementById("dash-date");
+if(_el)_el.textContent=_now.toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+
+// Restore last analysis timestamp
+const _lastAn=localStorage.getItem(LAST_AN);
+if(_lastAn){ const _ts=document.getElementById("last-analysis-ts"); if(_ts)_ts.textContent="Last run: "+new Date(_lastAn).toLocaleTimeString("en-IN",{hour:'2-digit',minute:'2-digit'}); }
+
+buildAll();
+</script>
+</body>
+</html>
+
